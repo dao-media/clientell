@@ -1,0 +1,126 @@
+@import '$lib/styles/radius.css';
+
+.detail-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+}
+
+.answer-card,
+.question-card {
+	padding: 1rem;
+	border: 1px solid var(--color-border);
+	background: var(--color-surface);
+	border-radius: var(--radius-lg);
+}
+
+.answer-card h3,
+.question-label {
+	font-size: 0.95rem;
+	font-weight: 600;
+}
+
+.answer-card p,
+.question-meta,
+.question-help {
+	margin-top: 0.5rem;
+	color: var(--color-muted);
+	font-size: 0.875rem;
+}
+
+.progress-bar {
+	height: 0.5rem;
+	background: var(--color-border);
+	border-radius: var(--radius-lg);
+	overflow: hidden;
+	margin-top: 0.75rem;
+}
+
+.progress-bar span {
+	display: block;
+	height: 100%;
+	background: var(--color-accent);
+}
+
+.question-list {
+	display: grid;
+	gap: 1rem;
+}
+
+.question-card-header {
+	display: flex;
+	justify-content: space-between;
+	gap: 1rem;
+}
+
+.category-form,
+.attachment-toggle {
+	margin-top: 1rem;
+	padding-top: 1rem;
+	border-top: 1px solid var(--color-border);
+}
+
+.toggle-row {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	flex-wrap: wrap;
+}
+
+.filters-actions {
+	display: flex;
+	gap: 0.5rem;
+	margin-top: 1rem;
+}
+
+.submissions-table .row-link {
+	color: inherit;
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.submissions-table .row-link:hover {
+	color: var(--color-accent);
+	text-decoration: underline;
+}
+
+.row-subtle {
+	margin-top: 0.15rem;
+	color: var(--color-muted);
+	font-size: 0.75rem;
+}
+
+.preview-cell {
+	max-width: 18rem;
+	color: var(--color-muted);
+}
+
+.status-pill {
+	display: inline-flex;
+	padding: 0.15rem 0.55rem;
+	border-radius: var(--radius-lg);
+	font-size: 0.75rem;
+	font-weight: 600;
+}
+
+.status-draft,
+.status-none {
+	background: #fff8e1;
+	color: #8a6116;
+}
+
+.status-submitted {
+	background: #defbe6;
+	color: #0e6027;
+}
+
+[data-theme='dark'] .status-draft,
+[data-theme='dark'] .status-none {
+	background: #451a03;
+	color: #fcd34d;
+}
+
+[data-theme='dark'] .status-submitted {
+	background: #064e3b;
+	color: #6ee7b7;
+}

@@ -1,0 +1,54 @@
+{
+	"name": "briefly",
+	"private": true,
+	"version": "0.0.1",
+	"type": "module",
+	"scripts": {
+		"dev": "volta run node scripts/dev.mjs",
+		"build": "volta run node scripts/build.mjs",
+		"preview": "volta run node scripts/preview.mjs",
+		"prepare": "svelte-kit sync || echo ''",
+		"check": "volta run node scripts/check.mjs",
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"lint": "prettier --check .",
+		"format": "prettier --write .",
+		"gen": "volta run node ./node_modules/wrangler/bin/wrangler.js types",
+		"db:push": "drizzle-kit push",
+		"db:generate": "drizzle-kit generate",
+		"db:migrate": "drizzle-kit migrate",
+		"db:migrate:local": "volta run node scripts/ensure-local-db.mjs",
+		"db:migrate:remote": "volta run node ./node_modules/wrangler/bin/wrangler.js d1 migrations apply briefly-db --remote",
+		"db:studio": "drizzle-kit studio",
+		"deploy": "volta run node scripts/deploy.mjs",
+		"domain:add": "volta run node ./node_modules/wrangler/bin/wrangler.js pages domain add briefly.daneoleary.com --project-name=briefly"
+	},
+	"devDependencies": {
+		"@sveltejs/adapter-cloudflare": "^7.2.8",
+		"@sveltejs/kit": "^2.63.0",
+		"@sveltejs/vite-plugin-svelte": "^7.1.2",
+		"@tailwindcss/vite": "^4.3.0",
+		"@types/node": "^20",
+		"@vitejs/plugin-basic-ssl": "^2.3.0",
+		"drizzle-kit": "^0.31.10",
+		"drizzle-orm": "^0.45.2",
+		"prettier": "^3.8.3",
+		"prettier-plugin-svelte": "^4.1.0",
+		"prettier-plugin-tailwindcss": "^0.8.0",
+		"svelte": "^5.56.1",
+		"svelte-check": "^4.6.0",
+		"tailwindcss": "^4.3.0",
+		"typescript": "^6.0.3",
+		"vite": "^8.0.16",
+		"wrangler": "^4.97.0"
+	},
+	"volta": {
+		"node": "22.12.0"
+	},
+	"engines": {
+		"node": ">=22.12.0"
+	},
+	"dependencies": {
+		"@lucide/svelte": "^1.21.0",
+		"pdf-lib": "^1.17.1"
+	}
+}

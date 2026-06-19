@@ -1,0 +1,24 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "briefly",
+	"compatibility_date": "2026-06-19",
+	"compatibility_flags": ["nodejs_als"],
+	"pages_build_output_dir": ".svelte-kit/cloudflare",
+	"vars": {
+		"PUBLIC_ORIGIN": "https://briefly.daneoleary.com"
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "briefly-db",
+			"database_id": "00000000-0000-0000-0000-000000000001",
+			"migrations_dir": "drizzle/migrations"
+		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "UPLOADS",
+			"bucket_name": "briefly-uploads"
+		}
+	]
+}
