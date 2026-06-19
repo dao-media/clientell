@@ -83,7 +83,9 @@ You should see `0000_init.sql` marked ✅.
 npm run deploy
 ```
 
-This builds the app and uploads it. The first run creates a Pages project named **briefly**.
+This applies any **pending** D1 migrations to production (additive only — your existing rows stay), builds the app, and uploads it. The first run creates a Pages project named **briefly**.
+
+**Do not wipe production data:** never re-run `d1 create briefly-db` or change `database_id` in `wrangler.jsonc` after you have real content. Do not use `db:push` (it is disabled in this repo). Schema changes should go through `npm run db:generate` and the migration files in `drizzle/migrations/`.
 
 Note the deployment URL in the output (something like `https://briefly.pages.dev` or `https://xxxx.briefly.pages.dev`). The site should load there before the custom domain is attached.
 
@@ -230,7 +232,7 @@ node ./node_modules/wrangler/bin/wrangler.js d1 create briefly-db
 # → update database_id in wrangler.jsonc
 
 npm run db:migrate:remote
-npm run deploy
+npm run deploy   # also runs pending remote migrations, then deploys
 # → set ADMIN_PASSWORD, SESSION_SECRET, PUBLIC_ORIGIN in dashboard
 npm run deploy
 npm run domain:add   # or use dashboard Step 6A

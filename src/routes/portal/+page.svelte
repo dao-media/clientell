@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Btn from '$lib/components/Btn.svelte';
+	import LoginDurationSelect from '$lib/components/auth/LoginDurationSelect.svelte';
 	import LogIn from '@lucide/svelte/icons/log-in';
 	import PageShell from '$lib/components/layout/PageShell.svelte';
 	import type { ActionData } from './$types';
@@ -40,6 +41,8 @@
 			{#if form?.error}
 				<p class="form-error">{form.error}</p>
 			{/if}
+
+			<LoginDurationSelect id="portal-login-duration" />
 
 			<div class="form-actions">
 				<Btn class="w-full" type="submit" icon={LogIn}>Continue</Btn>

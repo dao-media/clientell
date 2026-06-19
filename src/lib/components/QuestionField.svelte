@@ -1,6 +1,12 @@
 <script lang="ts">
 	import FileLinkUploader from '$lib/components/FileLinkUploader.svelte';
 	import { attachmentAnswerKey, parseAttachments, type AttachmentItem } from '$lib/attachments';
+	import {
+		inputRestrictionStats,
+		restrictionLabel,
+		type QuestionInputRestriction,
+		validateInputRestriction
+	} from '$lib/question-restrictions';
 	import type { QuestionType } from '$lib/server/db/schema';
 
 	type Question = {
@@ -11,6 +17,7 @@
 		required: boolean;
 		options: string[] | null;
 		allowAttachments: boolean;
+		inputRestriction?: QuestionInputRestriction | null;
 	};
 
 	let {
@@ -25,6 +32,22 @@
 
 	const attachmentKey = $derived(attachmentAnswerKey(question.id));
 	let attachments = $state<AttachmentItem[]>([]);
+	let restrictionError = $state('');
+
+	const restrictionHint = $derived(restrictionLabel(question.inputRestriction));
+	const answerValue = $derived(String(answers[question.id] ?? ''));
+	const restrictionStats = $derived(inputRestrictionStats(question.inputRestriction, answerValue));
+
+	function validateCurrentAnswer(value: string) {
+		restrictionError =
+			validateInputRestriction(question.inputRestriction, value) ??
+			'';
+	}
+
+	function updateAnswer(value: string) {
+		answers[question.id] = value;
+		validateCurrentAnswer(value);
+	}
 
 	$effect.pre(() => {
 		attachments = parseAttachments(answers[attachmentKey]);
@@ -38,6 +61,11 @@
 			delete answers[attachmentKey];
 		}
 	});
+
+	$effect(() => {
+		question.inputRestriction;
+		validateCurrentAnswer(answerValue);
+	});
 </script>
 
 <div class="space-y-2">
@@ -50,22 +78,25 @@
 		<textarea
 			id={question.id}
 			class="field min-h-32 resize-y"
+			class:field-invalid={!!restrictionError}
 			name={question.id}
-			value={String(answers[question.id] ?? '')}
+			value={answerValue}
 			oninput={(event) => {
-				answers[question.id] = (event.currentTarget as HTMLTextAreaElement).value;
+				updateAnswer((event.currentTarget as HTMLTextAreaElement).value);
 			}}
 			{disabled}
 			required={question.required}
+			aria-invalid={restrictionError ? 'true' : undefined}
+			aria-describedby={restrictionError ? `${question.id}-restriction-error` : undefined}
 		></textarea>
 	{:else if question.type === 'select'}
 		<select
 			id={question.id}
 			class="field"
 			name={question.id}
-			value={String(answers[question.id] ?? '')}
+			value={answerValue}
 			onchange={(event) => {
-				answers[question.id] = (event.currentTarget as HTMLSelectElement).value;
+				updateAnswer((event.currentTarget as HTMLSelectElement).value);
 			}}
 			{disabled}
 			required={question.required}
@@ -94,6 +125,7 @@
 		<input
 			id={question.id}
 			class="field"
+			class:field-invalid={!!restrictionError}
 			name={question.id}
 			type={question.type === 'number'
 				? 'number'
@@ -102,13 +134,27 @@
 					: question.type === 'url'
 						? 'url'
 						: 'text'}
-			value={String(answers[question.id] ?? '')}
+			value={answerValue}
 			oninput={(event) => {
-				answers[question.id] = (event.currentTarget as HTMLInputElement).value;
+				updateAnswer((event.currentTarget as HTMLInputElement).value);
 			}}
 			{disabled}
 			required={question.required}
+			aria-invalid={restrictionError ? 'true' : undefined}
+			aria-describedby={restrictionError ? `${question.id}-restriction-error` : undefined}
 		/>
+	{/if}
+
+	{#if restrictionHint}
+		<p class="help">{restrictionHint}</p>
+	{/if}
+
+	{#if restrictionStats}
+		<p class="help">{restrictionStats}</p>
+	{/if}
+
+	{#if restrictionError}
+		<p class="form-error" id="{question.id}-restriction-error">{restrictionError}</p>
 	{/if}
 
 	{#if question.helpText}

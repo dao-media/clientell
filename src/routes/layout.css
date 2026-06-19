@@ -35,6 +35,8 @@
 	--bento-min-lg: 17.5rem;
 	--bento-min-xl: 20rem;
 	--site-header-height: 3.25rem;
+	--bp-sm: 640px;
+	--bp-md: 768px;
 	--color-ink: #0f172a;
 	--color-muted: #64748b;
 	--color-surface: #ffffff;
@@ -144,6 +146,11 @@
 		line-height: 1.25;
 	}
 
+	.page-header-text {
+		min-width: 0;
+		flex: 1 1 16rem;
+	}
+
 	.page-kicker {
 		margin-bottom: 0.35rem;
 		font-size: 0.875rem;
@@ -159,6 +166,7 @@
 		color: var(--color-muted);
 		font-size: clamp(0.875rem, 1.5vw, 0.9375rem);
 		line-height: 1.5;
+		overflow-wrap: anywhere;
 	}
 
 	.page-header-actions {
@@ -179,10 +187,6 @@
 		--bento-min: var(--bento-min-sm);
 	}
 
-	.bento-grid--cards {
-		--bento-min: var(--bento-min-md);
-	}
-
 	.bento-grid--filters {
 		--bento-min: 13.75rem;
 	}
@@ -190,11 +194,6 @@
 	.bento-grid--detail {
 		--bento-min: var(--bento-min-lg);
 	}
-
-	.bento-grid--questions {
-		--bento-min: var(--bento-min-xl);
-	}
-
 	.bento-tile--full {
 		grid-column: 1 / -1;
 	}
@@ -468,5 +467,147 @@
 
 	.modal-close {
 		@apply inline-flex h-9 w-9 items-center justify-center rounded-md border-0 bg-transparent text-xl text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)];
+	}
+
+	.text-break {
+		overflow-wrap: anywhere;
+		word-break: break-word;
+		white-space: normal;
+		overflow: visible;
+		text-overflow: unset;
+	}
+
+	.record-list--stack {
+		display: none;
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--layout-grid-gap);
+		list-style: none;
+		padding: 0;
+		margin: 0;
+	}
+
+	.record-card {
+		display: grid;
+		gap: 0.75rem;
+	}
+
+	.record-card-head {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+		gap: 0.75rem;
+		flex-wrap: wrap;
+	}
+
+	.record-card-head .row-link {
+		color: inherit;
+		font-weight: 600;
+		text-decoration: none;
+		min-width: 0;
+	}
+
+	.record-card-head .row-link:hover {
+		color: var(--color-accent);
+		text-decoration: underline;
+	}
+
+	.record-card-meta {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0.5rem 1rem;
+		margin: 0;
+		font-size: 0.875rem;
+	}
+
+	.record-card-meta div {
+		display: grid;
+		gap: 0.15rem;
+		min-width: 0;
+	}
+
+	.record-card-meta dt {
+		color: var(--color-muted);
+		font-size: 0.75rem;
+		font-weight: 500;
+	}
+
+	.record-card-meta dd {
+		margin: 0;
+	}
+
+	.record-card-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+
+	@media (max-width: 767px) {
+		.card {
+			padding: 1rem;
+		}
+
+		.page-header {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		.page-header-actions {
+			width: 100%;
+		}
+
+		.modal-overlay {
+			padding: 0;
+			align-items: stretch;
+		}
+
+		.modal {
+			width: 100%;
+			min-height: 100%;
+			max-height: none;
+			border-radius: 0;
+			border-left: 0;
+			border-right: 0;
+		}
+
+		.table-view--desktop {
+			display: none;
+		}
+
+		.record-list--stack {
+			display: grid;
+		}
+
+		.submissions-table .col-hide-md,
+		.submissions-table .hide-md {
+			display: none;
+		}
+
+		.submissions-table th,
+		.submissions-table td {
+			padding: 0.75rem;
+		}
+	}
+
+	@media (min-width: 768px) {
+		.record-list--stack {
+			display: none;
+		}
+	}
+}
+
+/* Clients + Briefs question lists — outside Tailwind layers so column count cannot be overridden */
+.admin-card-grid {
+	display: grid;
+	gap: var(--layout-grid-gap);
+	grid-template-columns: minmax(0, 1fr);
+}
+
+.admin-card-grid > * {
+	min-width: 0;
+}
+
+@media (min-width: 768px) {
+	.admin-card-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
 }

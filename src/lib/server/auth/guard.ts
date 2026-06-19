@@ -3,7 +3,7 @@ import type { AdminSession, ClientSession } from './session';
 
 export function requireAdmin(locals: App.Locals): AdminSession {
 	if (!locals.admin) {
-		redirect(303, '/admin/login');
+		redirect(303, '/');
 	}
 	return locals.admin;
 }

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { refreshAfterQuestionChange } from '$lib/admin/refresh-data';
 	import CategoryTagPicker from '$lib/components/admin/CategoryTagPicker.svelte';
 	import Btn from '$lib/components/Btn.svelte';
 	import Alert from '$lib/components/ui/Alert.svelte';
@@ -8,6 +9,10 @@
 	import Select from '$lib/components/ui/Select.svelte';
 	import TextArea from '$lib/components/ui/TextArea.svelte';
 	import type { QuestionCategory } from '$lib/categories';
+	import {
+		QUESTION_INPUT_RESTRICTIONS,
+		type QuestionInputRestriction
+	} from '$lib/question-restrictions';
 
 	type QuestionDraft = {
 		id?: string;
@@ -15,6 +20,7 @@
 		helpText: string;
 		required: boolean;
 		allowAttachments: boolean;
+		inputRestriction: QuestionInputRestriction | null;
 		categories: string[];
 		isActive: boolean;
 	};
@@ -43,6 +49,7 @@
 	let helpText = $state('');
 	let required = $state(false);
 	let allowAttachments = $state(false);
+	let inputRestriction = $state('');
 	let selectedCategories = $state<string[]>([]);
 	let status = $state<'active' | 'inactive'>('active');
 
@@ -52,6 +59,7 @@
 			helpText = question?.helpText ?? '';
 			required = question?.required ?? !question?.id;
 			allowAttachments = question?.allowAttachments ?? false;
+			inputRestriction = question?.inputRestriction ?? '';
 			selectedCategories = [...(question?.categories ?? [])];
 			status = question?.isActive === false ? 'inactive' : 'active';
 		}
@@ -96,8 +104,11 @@
 				class="question-form"
 				use:enhance={() => {
 					return async ({ result, update }) => {
-						await update({ reset: false });
-						if (result.type === 'success') close();
+						await update({ reset: false, invalidateAll: false });
+						if (result.type === 'success') {
+							await refreshAfterQuestionChange();
+							close();
+						}
 					};
 				}}
 			>
@@ -129,6 +140,14 @@
 					placeholder="Type to search or pick a category…"
 					{oncreatecategory}
 				/>
+
+				<Select
+					labelText="Input restriction"
+					name="inputRestriction"
+					bind:value={inputRestriction}
+					options={[...QUESTION_INPUT_RESTRICTIONS]}
+				/>
+				<p class="restriction-help">Optional limit on how the client can answer this question.</p>
 
 				<div class="toggle-grid">
 					<Checkbox labelText="File/link attachments" bind:checked={allowAttachments} />
@@ -236,6 +255,12 @@
 		gap: 1rem;
 	}
 
+	.restriction-help {
+		margin-top: -0.75rem;
+		font-size: 0.8125rem;
+		color: var(--color-muted);
+	}
+
 	@media (min-width: 672px) {
 		.question-card {
 			width: min(calc(100% - 2.5rem), 56rem);
@@ -256,7 +281,7 @@
 		border-top: 1px solid var(--color-border);
 	}
 
-	@media (max-width: 671px) {
+	@media (max-width: 767px) {
 		.question-overlay {
 			padding: 0;
 			align-items: stretch;

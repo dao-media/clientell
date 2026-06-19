@@ -1,15 +1,19 @@
 import { fail } from '@sveltejs/kit';
-import { desc, eq } from 'drizzle-orm';
+import { desc, eq, inArray } from 'drizzle-orm';
 import {
 	mergeCategoryDefinitions,
 	normalizeClientServiceIds,
 	parseCategoriesFromFormData
 } from '$lib/categories';
 import { clients, questionSets } from '$lib/server/db/schema';
+import { formatUsPhoneInput } from '$lib/phone';
 import { normalizeEmail } from '$lib/utils';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, depends }) => {
+	depends('briefly:clients');
+	depends('briefly:dashboard');
+
 	const [clientRows, setRows] = await Promise.all([
 		locals.db.select().from(clients).orderBy(desc(clients.createdAt)),
 		locals.db.select({ categories: questionSets.categories }).from(questionSets)
@@ -33,7 +37,8 @@ export const actions: Actions = {
 		const company = String(data.get('company') ?? '').trim();
 		const contactName = String(data.get('contactName') ?? '').trim();
 		const email = normalizeEmail(String(data.get('email') ?? ''));
-		const phone = String(data.get('phone') ?? '').trim();
+		const phoneRaw = String(data.get('phone') ?? '').trim();
+		const phone = phoneRaw ? formatUsPhoneInput(phoneRaw) : '';
 		const selectedServices = parseCategoriesFromFormData(data, 'services');
 
 		if (!company || !contactName || !email) {
@@ -66,5 +71,34 @@ export const actions: Actions = {
 		}
 
 		return { success: true };
+	},
+
+	deleteClient: async ({ request, locals }) => {
+		const data = await request.formData();
+		const clientId = String(data.get('clientId') ?? '').trim();
+
+		if (!clientId) {
+			return fail(400, { deleteError: 'Missing client id.' });
+		}
+
+		await locals.db.delete(clients).where(eq(clients.id, clientId));
+
+		return { success: true, deleted: true };
+	},
+
+	bulkDeleteClients: async ({ request, locals }) => {
+		const data = await request.formData();
+		const clientIds = data
+			.getAll('clientIds')
+			.map((value) => String(value).trim())
+			.filter(Boolean);
+
+		if (clientIds.length === 0) {
+			return fail(400, { bulkDeleteError: 'Select at least one client.' });
+		}
+
+		await locals.db.delete(clients).where(inArray(clients.id, clientIds));
+
+		return { success: true, deletedCount: clientIds.length };
 	}
 };

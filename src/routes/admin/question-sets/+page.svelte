@@ -1,5 +1,11 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import { enhance } from '$app/forms';
+	import {
+		adminDataKeys,
+		refreshAfterQuestionChange,
+		refreshOnVisible
+	} from '$lib/admin/refresh-data';
 	import CategoryEditorPopover from '$lib/components/admin/CategoryEditorPopover.svelte';
 	import CategoryTabs from '$lib/components/admin/CategoryTabs.svelte';
 	import QuestionCard from '$lib/components/admin/QuestionCard.svelte';
@@ -12,7 +18,20 @@
 	import PageShell from '$lib/components/layout/PageShell.svelte';
 	import type { ActionData, PageData } from './$types';
 
-	let { data, form }: { data: PageData; form: ActionData } = $props();
+	let { form }: { form: ActionData } = $props();
+
+	const activeSet = $derived((page.data as PageData).activeSet);
+	const questions = $derived((page.data as PageData).questions);
+	const categoryCount = $derived(activeSet?.categories.length ?? 0);
+	const questionCount = $derived(questions.length);
+	const workspaceSummary = $derived.by(() => {
+		const categories =
+			categoryCount === 1 ? '1 category' : `${categoryCount} categories`;
+		const listed = questionCount === 1 ? '1 question' : `${questionCount} questions`;
+		return `${categories} · ${listed}`;
+	});
+
+	refreshOnVisible(adminDataKeys.questions, adminDataKeys.dashboard);
 
 	let questionModalOpen = $state(false);
 	let selectMode = $state(false);
@@ -28,11 +47,10 @@
 		helpText: string;
 		required: boolean;
 		allowAttachments: boolean;
+		inputRestriction: import('$lib/question-restrictions').QuestionInputRestriction | null;
 		categories: string[];
 		isActive: boolean;
 	} | null>(null);
-
-	const activeSet = $derived(data.activeSet);
 
 	const activeCategory = $derived(
 		activeSet?.categories.find((entry) => entry.id === activeCategoryId) ?? null
@@ -68,23 +86,34 @@
 	});
 
 	$effect(() => {
-		activeSet?.id;
-		editingCategory = null;
-		categoryEditorOpen = false;
-		categoryEditorAnchor = null;
-		selectMode = false;
-		selectedQuestionIds = [];
-		if (activeSet?.categories.length === 0) {
+		if (!activeSet) return;
+
+		if (activeSet.categories.length === 0) {
 			activeCategoryId = PLACEHOLDER_CATEGORY_TAB_ID;
-		} else {
-			activeCategoryId = activeSet?.categories[0]?.id ?? '';
+			return;
+		}
+
+		const tabStillValid = activeSet.categories.some((category) => category.id === activeCategoryId);
+		if (
+			!activeCategoryId ||
+			activeCategoryId === PLACEHOLDER_CATEGORY_TAB_ID ||
+			!tabStillValid
+		) {
+			activeCategoryId = activeSet.categories[0].id;
 		}
 	});
 
 	const filteredQuestions = $derived(
 		activeSet && hasRealCategory
-			? data.questions.filter((question) => question.categories.includes(activeCategoryId))
+			? questions.filter((question) => question.categories.includes(activeCategoryId))
 			: []
+	);
+
+	const categoryQuestionCount = $derived(
+		hasRealCategory ? filteredQuestions.length : 0
+	);
+	const categoryQuestionLabel = $derived(
+		categoryQuestionCount === 1 ? '1 question' : `${categoryQuestionCount} questions`
 	);
 
 	const questionModalHeading = $derived.by(() => {
@@ -144,6 +173,21 @@
 		openCategoryEditor(category, anchor);
 	}
 
+	async function reorderCategories(categoryIds: string[]) {
+		if (!activeSet) return;
+
+		const formData = new FormData();
+		formData.set('setId', activeSet.id);
+		for (const id of categoryIds) {
+			formData.append('categoryIds', id);
+		}
+
+		const response = await fetch('?/reorderCategories', { method: 'POST', body: formData });
+		if (response.ok) {
+			await refreshAfterQuestionChange();
+		}
+	}
+
 	function openNewQuestion() {
 		if (!activeSet) return;
 		editingQuestion = {
@@ -151,7 +195,8 @@
 			helpText: '',
 			required: true,
 			allowAttachments: false,
-			categories: hasRealCategory ? [activeCategoryId] : [],
+			inputRestriction: null,
+			categories: [],
 			isActive: true
 		};
 		questionModalOpen = true;
@@ -163,6 +208,7 @@
 		helpText: string | null;
 		required: boolean;
 		allowAttachments: boolean;
+		inputRestriction: import('$lib/question-restrictions').QuestionInputRestriction | null;
 		categories: string[];
 		isActive: boolean;
 	}) {
@@ -172,6 +218,7 @@
 			helpText: question.helpText ?? '',
 			required: question.required,
 			allowAttachments: question.allowAttachments,
+			inputRestriction: question.inputRestriction,
 			categories: [...question.categories],
 			isActive: question.isActive
 		};
@@ -182,6 +229,7 @@
 <PageShell>
 	<PageHeader
 		title="Manage Briefs"
+		kicker={workspaceSummary}
 		lead="Organize intake questions by category. Categories define which questions appear on each brief."
 	/>
 
@@ -203,8 +251,9 @@
 					class="bulk-toolbar"
 					use:enhance={() => {
 						return async ({ result, update }) => {
-							await update({ reset: false });
+							await update({ reset: false, invalidateAll: false });
 							if (result.type === 'success') {
+								await refreshAfterQuestionChange();
 								selectedQuestionIds = [];
 								selectMode = false;
 							}
@@ -248,6 +297,7 @@
 					onselect={selectCategory}
 					onadd={openAddCategory}
 					onedit={openEditCategory}
+					onreorder={reorderCategories}
 				/>
 
 				<CategoryEditorPopover
@@ -261,6 +311,9 @@
 			</section>
 
 			<section class="questions-section">
+				{#if hasRealCategory}
+					<p class="section-count">{categoryQuestionLabel} in {activeCategory?.name}</p>
+				{/if}
 				{#if !hasRealCategory && filteredQuestions.length === 0}
 					<div class="empty-panel">
 						<p class="empty-state">Add a question and assign at least one category to include it on a brief.</p>
@@ -272,7 +325,7 @@
 						<Btn variant="secondary" onclick={openNewQuestion}>Add question</Btn>
 					</div>
 				{:else}
-					<div class="bento-grid bento-grid--questions">
+					<div class="admin-card-grid">
 						{#each filteredQuestions as question (question.id)}
 							<QuestionCard
 								{question}
@@ -348,6 +401,12 @@
 	.questions-section {
 		display: grid;
 		gap: 1rem;
+	}
+
+	.section-count {
+		margin: 0;
+		font-size: 0.875rem;
+		color: var(--color-muted);
 	}
 
 	.empty-state {

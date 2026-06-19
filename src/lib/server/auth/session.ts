@@ -1,4 +1,6 @@
 import { env } from '$env/dynamic/private';
+import type { LoginDuration } from '$lib/server/auth/login-duration';
+import { sessionCookieMaxAge, sessionDurationSeconds } from '$lib/server/auth/login-duration';
 
 const DEV_SECRET = 'dev-only-change-me-in-production';
 
@@ -80,15 +82,56 @@ export async function parseSessionToken(token: string): Promise<SessionPayload |
 	}
 }
 
-export function sessionCookieOptions(maxAgeSeconds: number, secure: boolean) {
+export function sessionCookieOptions(maxAgeSeconds: number | null, secure: boolean) {
 	return {
 		path: '/',
 		httpOnly: true,
 		sameSite: 'lax' as const,
 		secure,
-		maxAge: maxAgeSeconds
+		...(maxAgeSeconds != null ? { maxAge: maxAgeSeconds } : {})
 	};
 }
 
-export const ADMIN_SESSION_SECONDS = 60 * 60 * 24 * 7;
-export const CLIENT_SESSION_SECONDS = 60 * 60 * 24 * 30;
+function isSecureRequest(url: URL, request?: Request): boolean {
+	if (url.protocol === 'https:') return true;
+	const forwarded = request?.headers.get('x-forwarded-proto');
+	return forwarded?.split(',')[0]?.trim() === 'https';
+}
+
+export async function setAdminSession(
+	cookies: import('@sveltejs/kit').Cookies,
+	url: URL,
+	duration: LoginDuration,
+	request?: Request
+) {
+	const seconds = sessionDurationSeconds(duration);
+	const token = await createSessionToken({
+		type: 'admin',
+		exp: Date.now() + seconds * 1000
+	});
+	cookies.set(
+		ADMIN_COOKIE,
+		token,
+		sessionCookieOptions(sessionCookieMaxAge(duration), isSecureRequest(url, request))
+	);
+}
+
+export async function setClientSession(
+	cookies: import('@sveltejs/kit').Cookies,
+	url: URL,
+	assignmentId: string,
+	duration: LoginDuration,
+	request?: Request
+) {
+	const seconds = sessionDurationSeconds(duration);
+	const token = await createSessionToken({
+		type: 'client',
+		assignmentId,
+		exp: Date.now() + seconds * 1000
+	});
+	cookies.set(
+		CLIENT_COOKIE,
+		token,
+		sessionCookieOptions(sessionCookieMaxAge(duration), isSecureRequest(url, request))
+	);
+}

@@ -158,4 +158,15 @@
 	.form-actions {
 		margin-top: 0;
 	}
+
+	@media (max-width: 767px) {
+		.form-footer {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		.form-actions :global(.btn) {
+			width: 100%;
+		}
+	}
 </style>

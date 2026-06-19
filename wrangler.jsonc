@@ -5,7 +5,9 @@
 	"compatibility_flags": ["nodejs_als"],
 	"pages_build_output_dir": ".svelte-kit/cloudflare",
 	"vars": {
-		"PUBLIC_ORIGIN": "https://briefly.daneoleary.com"
+		"PUBLIC_ORIGIN": "https://briefly.daneoleary.com",
+		"EMAIL_FROM": "briefly@daneoleary.com",
+		"CLOUDFLARE_ACCOUNT_ID": "f10ff17695a7e81951dc05a2a149c1db"
 	},
 	"d1_databases": [
 		{

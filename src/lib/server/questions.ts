@@ -18,6 +18,7 @@ export type QuestionRow = {
 	required: boolean;
 	options: string[] | null;
 	allowAttachments: boolean;
+	inputRestriction: import('$lib/question-restrictions').QuestionInputRestriction | null;
 	categories: string[];
 	isActive: boolean;
 };

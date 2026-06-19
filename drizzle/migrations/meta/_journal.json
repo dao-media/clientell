@@ -36,6 +36,27 @@
 			"when": 1750641600000,
 			"tag": "0005_client_services",
 			"breakpoints": true
+		},
+		{
+			"idx": 5,
+			"version": "6",
+			"when": 1750728000000,
+			"tag": "0006_pin_must_change",
+			"breakpoints": true
+		},
+		{
+			"idx": 6,
+			"version": "6",
+			"when": 1750814400000,
+			"tag": "0007_brief_invitation",
+			"breakpoints": true
+		},
+		{
+			"idx": 7,
+			"version": "6",
+			"when": 1750900800000,
+			"tag": "0008_question_input_restriction",
+			"breakpoints": true
 		}
 	]
 }

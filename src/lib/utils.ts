@@ -1,4 +1,8 @@
 import type { QuestionType } from '$lib/server/db/schema';
+import {
+	validateInputRestriction,
+	type QuestionInputRestriction
+} from '$lib/question-restrictions';
 
 export function normalizeEmail(email: string): string {
 	return email.trim().toLowerCase();
@@ -45,6 +49,7 @@ export function validateAnswers(
 		label: string;
 		required: boolean;
 		type: QuestionType;
+		inputRestriction?: QuestionInputRestriction | null;
 	}>,
 	answers: Record<string, unknown>
 ): string | null {
@@ -58,6 +63,13 @@ export function validateAnswers(
 
 		if (question.required && empty) {
 			return `"${question.label}" is required.`;
+		}
+
+		if (!empty) {
+			const restrictionError = validateInputRestriction(question.inputRestriction, value);
+			if (restrictionError) {
+				return `"${question.label}": ${restrictionError}`;
+			}
 		}
 	}
 	return null;

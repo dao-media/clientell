@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { page } from '$app/state';
+	import { adminDataKeys, refreshOnVisible } from '$lib/admin/refresh-data';
 	import Btn from '$lib/components/Btn.svelte';
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import PageHeader from '$lib/components/layout/PageHeader.svelte';
@@ -6,7 +8,10 @@
 	import { formatRelativeTime } from '$lib/utils';
 	import type { PageData } from './$types';
 
-	let { data }: { data: PageData } = $props();
+	const stats = $derived((page.data as PageData).stats);
+	const recentAssignments = $derived((page.data as PageData).recentAssignments);
+
+	refreshOnVisible(adminDataKeys.dashboard);
 </script>
 
 <PageShell>
@@ -18,15 +23,15 @@
 	<div class="bento-grid bento-grid--stats">
 		<div class="card">
 			<p class="stat-label">Clients</p>
-			<p class="stat-value">{data.stats.clients}</p>
+			<p class="stat-value">{stats.clients}</p>
 		</div>
 		<div class="card">
 			<p class="stat-label">Categories</p>
-			<p class="stat-value">{data.stats.categories}</p>
+			<p class="stat-value">{stats.categories}</p>
 		</div>
 		<div class="card">
 			<p class="stat-label">Outstanding</p>
-			<p class="stat-value">{data.stats.assignments}</p>
+			<p class="stat-value">{stats.assignments}</p>
 		</div>
 	</div>
 
@@ -36,26 +41,53 @@
 			<Btn href="/admin/briefs/new">New Brief</Btn>
 		</div>
 
-		{#if data.recentAssignments.length === 0}
+		{#if recentAssignments.length === 0}
 			<p class="empty-state">No submissions yet.</p>
 		{:else}
-			<div class="table-wrap">
+			<ul class="record-list--stack">
+				{#each recentAssignments as assignment (assignment.id)}
+					<li class="record-card card">
+						<div class="record-card-head">
+							<a class="row-link" href="/admin/submissions/{assignment.id}">{assignment.clientCompany}</a>
+							{#if assignment.status}
+								<StatusBadge status={assignment.status} />
+							{:else}
+								<span class="status-pill status-none">Not started</span>
+							{/if}
+						</div>
+						<dl class="record-card-meta">
+							<div>
+								<dt>Categories</dt>
+								<dd>{assignment.categoriesLabel}</dd>
+							</div>
+							<div>
+								<dt>Created</dt>
+								<dd>{formatRelativeTime(new Date(assignment.createdAt))}</dd>
+							</div>
+						</dl>
+						<div class="record-card-actions">
+							<Btn variant="ghost" href="/admin/submissions/{assignment.id}">Open detail</Btn>
+						</div>
+					</li>
+				{/each}
+			</ul>
+			<div class="table-wrap table-view--desktop">
 				<table class="submissions-table">
 					<thead>
 						<tr>
 							<th>Company</th>
-							<th>Categories</th>
+							<th class="hide-md">Categories</th>
 							<th>Status</th>
 							<th>Created</th>
 						</tr>
 					</thead>
 					<tbody>
-						{#each data.recentAssignments as assignment (assignment.id)}
+						{#each recentAssignments as assignment (assignment.id)}
 							<tr>
 								<td>
 									<a href="/admin/submissions/{assignment.id}">{assignment.clientCompany}</a>
 								</td>
-								<td>{assignment.categoriesLabel}</td>
+								<td class="hide-md">{assignment.categoriesLabel}</td>
 								<td>
 									{#if assignment.status}
 										<StatusBadge status={assignment.status} />

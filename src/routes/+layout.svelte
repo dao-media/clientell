@@ -1,9 +1,24 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 	import favicon from '$lib/assets/favicon.svg';
 	import SiteHeader from '$lib/components/SiteHeader.svelte';
 	import './layout.css';
 
 	let { data, children } = $props();
+
+	$effect(() => {
+		const pathname = $page.url.pathname;
+
+		if (data.auth.admin && pathname === '/') {
+			goto('/admin', { replaceState: true, invalidateAll: true });
+			return;
+		}
+
+		if (data.auth.client && (pathname === '/' || pathname === '/portal')) {
+			goto('/portal/brief', { replaceState: true, invalidateAll: true });
+		}
+	});
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /><title>Briefly</title></svelte:head>

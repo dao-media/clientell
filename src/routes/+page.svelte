@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Btn from '$lib/components/Btn.svelte';
+	import LoginDurationSelect from '$lib/components/auth/LoginDurationSelect.svelte';
 	import Field from '$lib/components/ui/Field.svelte';
 	import PageHeader from '$lib/components/layout/PageHeader.svelte';
 	import PageShell from '$lib/components/layout/PageShell.svelte';
@@ -85,6 +86,7 @@
 							required
 							invalidText={form?.adminError}
 						/>
+						<LoginDurationSelect id="home-admin-login-duration" />
 						<div class="form-actions">
 							<Btn type="submit">Sign in</Btn>
 							<Btn variant="ghost" type="button" onclick={collapsePanel}>Cancel</Btn>
@@ -148,6 +150,8 @@
 						{#if form?.portalError}
 							<p class="form-error">{form.portalError}</p>
 						{/if}
+
+						<LoginDurationSelect id="home-portal-login-duration" />
 
 						<div class="form-actions">
 							<Btn type="submit" icon={LogIn}>Continue</Btn>
@@ -262,14 +266,13 @@
 		}
 	}
 
-	@media (max-width: 640px) {
+	@media (max-width: 767px) {
 		.home-grid {
 			grid-template-columns: minmax(0, 1fr);
 		}
 
-		.home-grid--admin,
-		.home-grid--portal {
-			grid-template-columns: minmax(0, 1fr);
+		.home-tile {
+			min-height: auto;
 		}
 	}
 </style>

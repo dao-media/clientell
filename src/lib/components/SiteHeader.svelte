@@ -480,6 +480,11 @@
 	}
 
 	@media (max-width: 767px) {
+		.site-header-end {
+			padding-left: 0.5rem;
+			gap: 0.5rem;
+		}
+
 		.menu-toggle {
 			display: inline-flex;
 		}

@@ -7,6 +7,7 @@
 	import PageShell from '$lib/components/layout/PageShell.svelte';
 	import { attachmentAnswerKey, parseAttachments } from '$lib/attachments';
 	import { formatAnswer, formatRelativeTime } from '$lib/utils';
+	import { formatUsPhoneDisplay } from '$lib/phone';
 	import { formatCategoryList } from '$lib/categories';
 	import type { ActionData, PageData } from './$types';
 
@@ -41,12 +42,21 @@
 	{/if}
 
 	<div class="detail-actions">
-		<form method="POST" action="?/sendReminder">
-			<Btn type="submit">Send email reminder</Btn>
-		</form>
-		<form method="POST" action="?/sendPortalLink">
-			<Btn variant="secondary" type="submit">Send portal link</Btn>
-		</form>
+		{#if data.canSendBrief}
+			<form method="POST" action="?/sendBrief">
+				<Btn type="submit">Send brief</Btn>
+			</form>
+		{:else if data.assignment.sentAt}
+			<p class="sent-note">Sent to client {formatRelativeTime(new Date(data.assignment.sentAt))}</p>
+		{/if}
+		{#if data.assignment.sentAt}
+			<form method="POST" action="?/sendReminder">
+				<Btn variant="secondary" type="submit">Send email reminder</Btn>
+			</form>
+			<form method="POST" action="?/sendPortalLink">
+				<Btn variant="secondary" type="submit">Send portal link</Btn>
+			</form>
+		{/if}
 		<Btn variant="ghost" href="/admin/submissions/{data.assignment.id}/pdf">Export PDF</Btn>
 		<form method="POST" action="?/rotatePin">
 			<Btn variant="ghost" type="submit">Generate new PIN</Btn>
@@ -88,11 +98,11 @@
 			<h2>Client access</h2>
 			<p><strong>Company:</strong> {data.client.company}</p>
 			<p><strong>Point of contact:</strong> {data.client.contactName}</p>
-			<p><strong>Email:</strong> {data.client.email}</p>
+			<p><strong>Email:</strong> <span class="text-break">{data.client.email}</span></p>
 			{#if data.client.phone}
-				<p><strong>Phone:</strong> {data.client.phone}</p>
+				<p><strong>Phone:</strong> {formatUsPhoneDisplay(data.client.phone)}</p>
 			{/if}
-			<p><strong>Portal:</strong> {data.portalUrl}</p>
+			<p><strong>Portal:</strong> <span class="text-break">{data.portalUrl}</span></p>
 			<p><strong>Created:</strong> {formatRelativeTime(new Date(data.assignment.createdAt))}</p>
 			<p><strong>Categories:</strong> {formatCategoryList(data.briefCategories, data.setCategories)}</p>
 			<p>
@@ -136,7 +146,13 @@
 	.detail-actions {
 		display: flex;
 		flex-wrap: wrap;
+		align-items: center;
 		gap: 0.75rem;
+	}
+
+	.sent-note {
+		font-size: 0.875rem;
+		color: var(--color-muted);
 	}
 
 	.progress-summary {

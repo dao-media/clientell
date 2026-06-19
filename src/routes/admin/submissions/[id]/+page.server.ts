@@ -2,9 +2,10 @@ import { error, fail } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 import { generatePin, hashPin } from '$lib/server/auth/pin';
 import { getPortalUrl } from '$lib/server/config';
-import { sendBriefReminder, sendPortalLinkEmail } from '$lib/server/email/reminder';
+import { sendBriefReminder, sendBriefReadyEmail, sendPortalLinkEmail } from '$lib/server/email/reminder';
 import { getSubmissionDetail } from '$lib/server/submissions';
 import { assignments, responses } from '$lib/server/db/schema';
+import { formatCategoryList } from '$lib/categories';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
@@ -20,11 +21,47 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 		briefCategories: detail.briefCategories,
 		setCategories: detail.setCategories,
 		progress: detail.progress,
-		portalUrl: getPortalUrl()
+		portalUrl: getPortalUrl(),
+		canSendBrief: !detail.assignment.sentAt && Boolean(detail.assignment.invitationPin)
 	};
 };
 
 export const actions: Actions = {
+	sendBrief: async ({ locals, params, platform }) => {
+		const detail = await getSubmissionDetail(locals.db, params.id);
+		if (!detail) return fail(404, { error: 'Submission not found.' });
+
+		if (detail.assignment.sentAt) {
+			return fail(400, { error: 'This brief was already sent to the client.' });
+		}
+
+		const pin = detail.assignment.invitationPin;
+		if (!pin) {
+			return fail(400, {
+				error: 'Generate a new PIN before sending this brief to the client.'
+			});
+		}
+
+		const categoriesLabel = formatCategoryList(detail.briefCategories, detail.setCategories);
+		const result = await sendBriefReadyEmail(platform, {
+			to: detail.client.email,
+			contactName: detail.client.contactName,
+			loginEmail: detail.client.email,
+			pin,
+			categoriesLabel: categoriesLabel === 'All categories' ? undefined : categoriesLabel
+		});
+
+		if (!result.ok) {
+			return fail(500, { emailResult: result, action: 'brief' as const });
+		}
+
+		await locals.db
+			.update(assignments)
+			.set({ sentAt: new Date(), invitationPin: null })
+			.where(eq(assignments.id, params.id));
+
+		return { emailResult: result, action: 'brief' as const };
+	},
 	sendReminder: async ({ locals, params, platform }) => {
 		const detail = await getSubmissionDetail(locals.db, params.id);
 		if (!detail) return fail(404, { error: 'Submission not found.' });
@@ -53,12 +90,20 @@ export const actions: Actions = {
 	},
 
 	rotatePin: async ({ locals, params }) => {
+		const detail = await getSubmissionDetail(locals.db, params.id);
+		if (!detail) return fail(404, { error: 'Submission not found.' });
+
 		const pin = generatePin();
 		const { hash, salt } = await hashPin(pin);
 
 		await locals.db
 			.update(assignments)
-			.set({ pinHash: hash, pinSalt: salt })
+			.set({
+				pinHash: hash,
+				pinSalt: salt,
+				pinMustChange: true,
+				...(detail.assignment.sentAt ? {} : { invitationPin: pin })
+			})
 			.where(eq(assignments.id, params.id));
 
 		return { rotatedPin: pin };

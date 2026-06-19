@@ -55,10 +55,13 @@ Open [http://localhost:5173](http://localhost:5173).
 | `npm run dev` | Local development |
 | `npm run build` | Production build |
 | `npm run preview` | Preview Cloudflare build locally |
-| `npm run deploy` | Build and deploy to Cloudflare Pages |
+| `npm run deploy` | Apply pending remote migrations, build, and deploy to Cloudflare Pages |
 | `npm run domain:add` | Attach `briefly.daneoleary.com` to the Pages project |
-| `npm run db:migrate:local` | Apply D1 migrations locally |
-| `npm run db:migrate:remote` | Apply D1 migrations to Cloudflare |
+| `npm run db:migrate:local` | Apply pending D1 migrations locally (safe; keeps existing rows) |
+| `npm run db:migrate:remote` | Apply pending D1 migrations to Cloudflare (safe; keeps existing rows) |
+| `npm run db:generate` | Generate a new SQL migration after editing `schema.ts` |
+
+`npm run deploy` and `npm run db:migrate:*` only run **new** migration files (typically `ALTER TABLE … ADD COLUMN`). They do not wipe questions, categories, clients, or submissions. **`db:push` is disabled** by default because it can drop data — use `db:generate` + migrations instead.
 
 ## Deploy to briefly.daneoleary.com
 

@@ -1,6 +1,7 @@
 import { relations } from 'drizzle-orm';
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import type { QuestionCategory } from '$lib/categories';
+import type { QuestionInputRestriction } from '$lib/question-restrictions';
 
 export const questionTypes = [
 	'text',
@@ -58,6 +59,7 @@ export const questions = sqliteTable('questions', {
 	required: integer('required', { mode: 'boolean' }).notNull().default(false),
 	options: text('options', { mode: 'json' }).$type<string[]>(),
 	allowAttachments: integer('allow_attachments', { mode: 'boolean' }).notNull().default(false),
+	inputRestriction: text('input_restriction').$type<QuestionInputRestriction | null>(),
 	categories: text('categories', { mode: 'json' }).$type<string[]>().notNull().default([]),
 	isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true)
 });
@@ -74,10 +76,13 @@ export const assignments = sqliteTable('assignments', {
 		.references(() => questionSets.id),
 	pinHash: text('pin_hash').notNull(),
 	pinSalt: text('pin_salt').notNull(),
+	pinMustChange: integer('pin_must_change', { mode: 'boolean' }).notNull().default(false),
 	allowEditsAfterSubmit: integer('allow_edits_after_submit', { mode: 'boolean' })
 		.notNull()
 		.default(true),
 	isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+	invitationPin: text('invitation_pin'),
+	sentAt: integer('sent_at', { mode: 'timestamp' }),
 	categories: text('categories', { mode: 'json' }).$type<string[]>().notNull().default([]),
 	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()

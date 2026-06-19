@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { refreshAfterQuestionChange } from '$lib/admin/refresh-data';
 	import Btn from '$lib/components/Btn.svelte';
 	import Alert from '$lib/components/ui/Alert.svelte';
 	import Field from '$lib/components/ui/Field.svelte';
@@ -91,8 +92,11 @@
 			class="category-form"
 			use:enhance={() => {
 				return async ({ result, update }) => {
-					await update({ reset: false });
-					if (result.type === 'success') close();
+					await update({ reset: false, invalidateAll: false });
+					if (result.type === 'success') {
+						await refreshAfterQuestionChange();
+						close();
+					}
 				};
 			}}
 		>
@@ -284,5 +288,26 @@
 		gap: 0.5rem;
 		flex-wrap: wrap;
 		justify-content: flex-end;
+	}
+
+	@media (max-width: 767px) {
+		.category-popover-backdrop {
+			background: rgb(15 23 42 / 40%);
+		}
+
+		.category-popover {
+			top: auto !important;
+			left: 0 !important;
+			right: 0 !important;
+			bottom: 0 !important;
+			width: 100% !important;
+			max-height: min(90vh, 100dvh);
+			overflow-y: auto;
+			border-left: 0;
+			border-right: 0;
+			border-bottom: 0;
+			border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+			padding: 1.25rem 1rem calc(1.25rem + env(safe-area-inset-bottom, 0px));
+		}
 	}
 </style>

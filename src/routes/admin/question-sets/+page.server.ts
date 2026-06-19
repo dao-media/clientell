@@ -7,6 +7,7 @@ import {
 	validateQuestionCategories,
 	type QuestionCategory
 } from '$lib/categories';
+import { parseQuestionInputRestriction } from '$lib/question-restrictions';
 import { ensureBriefWorkspace } from '$lib/server/brief-workspace';
 import { questionSets, questions } from '$lib/server/db/schema';
 import type { Actions, PageServerLoad } from './$types';
@@ -19,7 +20,10 @@ function resolveSetId(data: FormData, workspaceId: string): string {
 	return String(data.get('setId') ?? workspaceId).trim();
 }
 
-export const load: PageServerLoad = async ({ locals, url }) => {
+export const load: PageServerLoad = async ({ locals, url, depends }) => {
+	depends('briefly:questions');
+	depends('briefly:dashboard');
+
 	if (url.searchParams.has('all') || url.searchParams.has('set')) {
 		redirect(303, '/admin/question-sets');
 	}
@@ -78,6 +82,36 @@ export const actions: Actions = {
 		return { success: true, activeCategoryId: nextCategory.id };
 	},
 
+	reorderCategories: async ({ request, locals }) => {
+		const activeSet = await ensureBriefWorkspace(locals.db);
+		const data = await request.formData();
+		const setId = resolveSetId(data, activeSet.id);
+		const orderedIds = data
+			.getAll('categoryIds')
+			.map((value) => String(value).trim())
+			.filter(Boolean);
+
+		if (orderedIds.length === 0) {
+			return fail(400, { categoryError: 'Category order is required.' });
+		}
+
+		const byId = new Map(activeSet.categories.map((category) => [category.id, category]));
+		const nextCategories = orderedIds
+			.map((id) => byId.get(id))
+			.filter((category): category is QuestionCategory => Boolean(category));
+
+		if (nextCategories.length !== activeSet.categories.length) {
+			return fail(400, { categoryError: 'Invalid category order.' });
+		}
+
+		await locals.db
+			.update(questionSets)
+			.set({ categories: persistCategories(nextCategories), updatedAt: new Date() })
+			.where(eq(questionSets.id, setId));
+
+		return { success: true };
+	},
+
 	saveQuestion: async ({ request, locals }) => {
 		const activeSet = await ensureBriefWorkspace(locals.db);
 		const data = await request.formData();
@@ -89,6 +123,7 @@ export const actions: Actions = {
 		const allowAttachments = data.get('allowAttachments') === 'on';
 		const isActive = data.get('isActive') === 'on';
 		const selectedCategories = parseCategoriesFromFormData(data);
+		const inputRestriction = parseQuestionInputRestriction(data.get('inputRestriction'));
 
 		if (!label) return fail(400, { questionError: 'Question is required.' });
 
@@ -104,6 +139,7 @@ export const actions: Actions = {
 					required,
 					allowAttachments,
 					categories: selectedCategories,
+					inputRestriction,
 					isActive,
 					type: 'textarea'
 				})
@@ -123,6 +159,7 @@ export const actions: Actions = {
 				required,
 				allowAttachments,
 				categories: selectedCategories,
+				inputRestriction,
 				isActive,
 				type: 'textarea',
 				sortOrder: nextOrder

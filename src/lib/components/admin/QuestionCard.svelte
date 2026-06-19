@@ -1,8 +1,11 @@
 <script lang="ts">
+	import { enhance } from '$app/forms';
+	import { refreshAfterQuestionChange } from '$lib/admin/refresh-data';
 	import Btn from '$lib/components/Btn.svelte';
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import Chip from '$lib/components/ui/Chip.svelte';
 	import { formatCategoryList, type QuestionCategory } from '$lib/categories';
+	import { restrictionLabel, type QuestionInputRestriction } from '$lib/question-restrictions';
 
 	type QuestionItem = {
 		id: string;
@@ -10,6 +13,7 @@
 		helpText: string | null;
 		required: boolean;
 		allowAttachments: boolean;
+		inputRestriction: QuestionInputRestriction | null;
 		categories: string[];
 		isActive: boolean;
 	};
@@ -64,6 +68,9 @@
 				{#if question.allowAttachments}
 					<Chip variant="green">Attachments</Chip>
 				{/if}
+				{#if restrictionLabel(question.inputRestriction)}
+					<Chip variant="gray">{restrictionLabel(question.inputRestriction)}</Chip>
+				{/if}
 			</div>
 		</div>
 		{#if question.helpText}
@@ -77,6 +84,14 @@
 			method="POST"
 			action="?/deleteQuestion"
 			class="question-delete"
+			use:enhance={() => {
+				return async ({ result, update }) => {
+					await update({ reset: false, invalidateAll: false });
+					if (result.type === 'success') {
+						await refreshAfterQuestionChange();
+					}
+				};
+			}}
 			onsubmit={(event) => {
 				if (!confirm('Delete this question?')) event.preventDefault();
 			}}
@@ -138,12 +153,15 @@
 		justify-content: space-between;
 		gap: 0.75rem;
 		align-items: flex-start;
+		flex-wrap: wrap;
 	}
 
 	h3 {
 		font-size: 1rem;
 		font-weight: 600;
 		line-height: 1.35;
+		min-width: 0;
+		flex: 1 1 12rem;
 	}
 
 	.question-tags {

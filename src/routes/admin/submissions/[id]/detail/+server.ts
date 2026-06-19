@@ -10,6 +10,8 @@ export const GET: RequestHandler = async ({ locals, params }) => {
 		assignment: {
 			id: detail.assignment.id,
 			isActive: detail.assignment.isActive,
+			sentAt: detail.assignment.sentAt?.toISOString() ?? null,
+			canSendBrief: !detail.assignment.sentAt && Boolean(detail.assignment.invitationPin),
 			createdAt: detail.assignment.createdAt.toISOString()
 		},
 		client: {

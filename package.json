@@ -13,7 +13,7 @@
 		"lint": "prettier --check .",
 		"format": "prettier --write .",
 		"gen": "volta run node ./node_modules/wrangler/bin/wrangler.js types",
-		"db:push": "drizzle-kit push",
+		"db:push": "volta run node scripts/guard-db-push.mjs",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
 		"db:migrate:local": "volta run node scripts/ensure-local-db.mjs",

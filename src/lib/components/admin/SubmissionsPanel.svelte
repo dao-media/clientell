@@ -140,17 +140,56 @@
 		<p class="empty-state">No submissions match your filters.</p>
 	{:else}
 		<div class="results-meta">{submissions.length} submission{submissions.length === 1 ? '' : 's'}</div>
-		<div class="table-wrap bento-tile--full">
+		<ul class="record-list--stack">
+			{#each submissions as submission (submission.id)}
+				<li class="record-card card">
+					<div class="record-card-head">
+						<a class="row-link" href="/admin/submissions/{submission.id}">{submission.clientCompany}</a>
+						<span class="status-pill status-{submission.status ?? 'none'}">
+							{statusLabel(submission.status)}
+						</span>
+					</div>
+					<p class="row-subtle text-break">
+						{submission.clientContact} · {submission.clientEmail}
+						{#if submission.clientPhone}
+							· {submission.clientPhone}
+						{/if}
+					</p>
+					<dl class="record-card-meta">
+						<div>
+							<dt>Categories</dt>
+							<dd>{submission.categoriesLabel}</dd>
+						</div>
+						<div>
+							<dt>Progress</dt>
+							<dd>{submission.progress}%</dd>
+						</div>
+						<div>
+							<dt>Updated</dt>
+							<dd>{formatDate(submission.updatedAt ?? submission.createdAt)}</dd>
+						</div>
+					</dl>
+					{#if submission.answerPreview}
+						<p class="preview-cell text-break">{submission.answerPreview}</p>
+					{/if}
+					<div class="record-card-actions">
+						<Btn variant="secondary" onclick={() => openReview(submission.id)}>View responses</Btn>
+						<Btn variant="ghost" href="/admin/submissions/{submission.id}">Open detail</Btn>
+					</div>
+				</li>
+			{/each}
+		</ul>
+		<div class="table-wrap table-view--desktop bento-tile--full">
 			<table class="submissions-table">
 				<thead>
 					<tr>
 						<th>Company</th>
-						<th>Categories</th>
+						<th class="hide-md">Categories</th>
 						<th>Status</th>
-						<th>Progress</th>
+						<th class="hide-md">Progress</th>
 						<th>Updated</th>
-						<th>Preview</th>
-						<th class="actions-col"><span class="sr-only">Open responses</span></th>
+						<th class="hide-md">Preview</th>
+						<th class="actions-col hide-md"><span class="sr-only">Open responses</span></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -158,23 +197,23 @@
 						<tr class:selected={$page.url.pathname === `/admin/submissions/${submission.id}`}>
 							<td>
 								<a class="row-link" href="/admin/submissions/{submission.id}">{submission.clientCompany}</a>
-								<div class="row-subtle">
+								<div class="row-subtle text-break">
 									{submission.clientContact} · {submission.clientEmail}
 									{#if submission.clientPhone}
 										· {submission.clientPhone}
 									{/if}
 								</div>
 							</td>
-							<td>{submission.categoriesLabel}</td>
+							<td class="hide-md">{submission.categoriesLabel}</td>
 							<td>
 								<span class="status-pill status-{submission.status ?? 'none'}">
 									{statusLabel(submission.status)}
 								</span>
 							</td>
-							<td>{submission.progress}%</td>
+							<td class="hide-md">{submission.progress}%</td>
 							<td>{formatDate(submission.updatedAt ?? submission.createdAt)}</td>
-							<td class="preview-cell">{submission.answerPreview || '—'}</td>
-							<td class="actions-col">
+							<td class="preview-cell hide-md">{submission.answerPreview || '—'}</td>
+							<td class="actions-col hide-md">
 								<button
 									type="button"
 									class="review-button"
@@ -238,6 +277,12 @@
 	.review-button:hover {
 		color: var(--color-accent);
 		background: var(--color-surface-hover);
+	}
+
+	.preview-cell {
+		color: var(--color-muted);
+		font-size: 0.875rem;
+		line-height: 1.45;
 	}
 
 	.sr-only {

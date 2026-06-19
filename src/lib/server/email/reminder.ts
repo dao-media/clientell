@@ -1,56 +1,13 @@
-import { env } from '$env/dynamic/private';
 import { getPortalUrl } from '$lib/server/config';
+import { sendOutboundEmail, type SendResult as ReminderResult } from './send';
 
-type EmailBinding = {
-	send: (message: {
-		to: string;
-		from: { email: string; name?: string };
-		subject: string;
-		html: string;
-		text: string;
-	}) => Promise<unknown>;
-};
-
-export type ReminderResult = {
-	ok: boolean;
-	simulated: boolean;
-	message: string;
-};
-
-function getFromAddress(): string {
-	return env.EMAIL_FROM ?? 'briefly@daneoleary.com';
-}
+export type { ReminderResult };
 
 async function sendEmail(
 	platform: App.Platform | undefined,
 	message: { to: string; subject: string; html: string; text: string }
 ): Promise<ReminderResult> {
-	const email = (platform?.env as { EMAIL?: EmailBinding } | undefined)?.EMAIL;
-
-	if (!email) {
-		console.log('[briefly email]', message.subject, '→', message.to);
-		console.log(message.text);
-		return {
-			ok: true,
-			simulated: true,
-			message: 'Email logged locally (configure EMAIL binding for production delivery).'
-		};
-	}
-
-	try {
-		await email.send({
-			to: message.to,
-			from: { email: getFromAddress(), name: 'Briefly' },
-			subject: message.subject,
-			html: message.html,
-			text: message.text
-		});
-
-		return { ok: true, simulated: false, message: 'Email sent.' };
-	} catch (error) {
-		console.error('[briefly email] send failed', error);
-		return { ok: false, simulated: false, message: 'Could not send email.' };
-	}
+	return sendOutboundEmail(platform, message);
 }
 
 export async function sendBriefReminder(
@@ -111,7 +68,8 @@ export async function sendBriefReadyEmail(
 		`Email: ${params.loginEmail}`,
 		`PIN: ${params.pin}`,
 		'',
-		'Please save your PIN — you will need it each time you access the questionnaire.',
+		'This is a one-time PIN. The first time you sign in, you will choose your own 6-digit PIN.',
+		'Please save your new PIN after that — you will need it each time you access the questionnaire.',
 		...categoriesLine,
 		'— Briefly'
 	].join('\n');
@@ -127,7 +85,8 @@ export async function sendBriefReadyEmail(
 			<li>Email: <strong>${params.loginEmail}</strong></li>
 			<li>PIN: <strong>${params.pin}</strong></li>
 		</ul>
-		<p>Please save your PIN — you will need it each time you access the questionnaire.</p>
+		<p>Please save your new PIN after that — you will need it each time you access the questionnaire.</p>
+		<p><em>This email PIN is one-time. You will set your own PIN on first sign-in.</em></p>
 		${categoriesHtml}
 		<p>— Briefly</p>
 	`;

@@ -4,7 +4,9 @@ import { countDistinctBriefCategories } from '$lib/server/brief-workspace';
 import { assignments, clients, questionSets, responses } from '$lib/server/db/schema';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, depends }) => {
+	depends('briefly:dashboard');
+
 	const [clientCount, categoryCount, assignmentRows] = await Promise.all([
 		locals.db.select({ count: sql<number>`count(*)` }).from(clients),
 		countDistinctBriefCategories(locals.db),

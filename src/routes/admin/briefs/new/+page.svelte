@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page } from '$app/stores';
 	import Btn from '$lib/components/Btn.svelte';
 	import Alert from '$lib/components/ui/Alert.svelte';
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
@@ -17,6 +18,13 @@
 	const selectedClient = $derived(data.clients.find((client) => client.id === clientId));
 
 	$effect(() => {
+		const presetClientId = $page.url.searchParams.get('client');
+		if (presetClientId && data.clients.some((client) => client.id === presetClientId)) {
+			clientId = presetClientId;
+		}
+	});
+
+	$effect(() => {
 		const client = selectedClient;
 		const validIds = new Set(data.workspace.categories.map((category) => category.id));
 		briefCategories = (client?.services ?? []).filter((id) => validIds.has(id));
@@ -30,15 +38,8 @@
 		<Alert
 			variant="success"
 			title="Brief created"
-			subtitle="Login details were sent to {form.clientEmail}."
+			subtitle="Share the PIN with the client yourself, or send the brief from the submission page when you're ready."
 		/>
-		{#if form.emailResult}
-			<Alert
-				variant={form.emailResult.ok ? (form.emailResult.simulated ? 'info' : 'success') : 'error'}
-				title={form.emailResult.ok ? (form.emailResult.simulated ? 'Email simulated' : 'Email sent') : 'Email failed'}
-				subtitle={form.emailResult.message}
-			/>
-		{/if}
 		<div class="card">
 			<p><strong>Portal:</strong> {form.portalUrl}</p>
 			<p><strong>Login email:</strong> {form.clientEmail}</p>
@@ -47,7 +48,7 @@
 				<p><strong>Categories:</strong> {form.briefCategories}</p>
 			{/if}
 			<div class="form-actions">
-				<Btn href="/admin/submissions/{form.assignmentId}">View submission</Btn>
+				<Btn href="/admin/submissions/{form.assignmentId}">Open submission</Btn>
 				<Btn variant="secondary" href="/admin/briefs/new">Create another</Btn>
 			</div>
 		</div>

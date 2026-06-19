@@ -278,4 +278,14 @@
 		font-size: 0.75rem;
 		color: var(--color-error);
 	}
+
+	@media (max-width: 480px) {
+		.link-row {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.link-add {
+			width: 100%;
+		}
+	}
 </style>

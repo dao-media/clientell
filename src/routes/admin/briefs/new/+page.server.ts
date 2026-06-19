@@ -9,7 +9,6 @@ import {
 import { generatePin, hashPin } from '$lib/server/auth/pin';
 import { ensureBriefWorkspace } from '$lib/server/brief-workspace';
 import { getPortalUrl } from '$lib/server/config';
-import { sendBriefReadyEmail } from '$lib/server/email/reminder';
 import { assignments, clients, responses } from '$lib/server/db/schema';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -29,7 +28,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
-	default: async ({ request, locals, platform }) => {
+	default: async ({ request, locals }) => {
 		const data = await request.formData();
 		const clientId = String(data.get('clientId') ?? '');
 		const allowEditsAfterSubmit = data.get('allowEditsAfterSubmit') === 'on';
@@ -64,6 +63,8 @@ export const actions: Actions = {
 				questionSetId: workspace.id,
 				pinHash: hash,
 				pinSalt: salt,
+				pinMustChange: true,
+				invitationPin: pin,
 				allowEditsAfterSubmit,
 				categories: briefCategories
 			})
@@ -76,13 +77,6 @@ export const actions: Actions = {
 		});
 
 		const categoriesLabel = formatCategoryList(briefCategories, workspace.categories);
-		const emailResult = await sendBriefReadyEmail(platform, {
-			to: client.email,
-			contactName: client.contactName,
-			loginEmail: client.email,
-			pin,
-			categoriesLabel: categoriesLabel === 'All categories' ? undefined : categoriesLabel
-		});
 
 		return {
 			success: true,
@@ -90,8 +84,7 @@ export const actions: Actions = {
 			pin,
 			clientEmail: client.email,
 			briefCategories: categoriesLabel,
-			portalUrl: getPortalUrl(),
-			emailResult
+			portalUrl: getPortalUrl()
 		};
 	}
 };

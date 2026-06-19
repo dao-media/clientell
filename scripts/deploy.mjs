@@ -12,6 +12,8 @@ function run(args) {
 	}
 }
 
+// Apply only pending SQL migrations (additive). Does not reset or replace the database.
+run([wrangler, 'd1', 'migrations', 'apply', 'briefly-db', '--remote']);
 run([path.join(root, 'scripts/build.mjs')]);
 run([
 	wrangler,

@@ -1,6 +1,7 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { and, eq } from 'drizzle-orm';
 import { formatCategoryList, normalizeCategoryDefinitions, parseCategoryIds } from '$lib/categories';
+import { redirectClientIfPinChangeRequired } from '$lib/server/auth/portal-login';
 import { requireClient } from '$lib/server/auth/guard';
 import { loadQuestionsForAssignment } from '$lib/server/questions';
 import {
@@ -15,6 +16,7 @@ import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const session = requireClient(locals);
+	await redirectClientIfPinChangeRequired(locals.db, session.assignmentId);
 
 	const [row] = await locals.db
 		.select({
@@ -124,6 +126,11 @@ export const actions: Actions = {
 			.filter(Boolean);
 		const setQuestions = await loadAssignmentQuestions(locals.db, session.assignmentId, questionIds);
 		const answers = parseAnswers(data, questionIds, setQuestions);
+
+		const validationError = validateAnswers(setQuestions, answers);
+		if (validationError) {
+			return fail(400, { error: validationError });
+		}
 
 		const [response] = await locals.db
 			.select()
