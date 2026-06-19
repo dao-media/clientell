@@ -11,14 +11,14 @@
 		{
 			"binding": "DB",
 			"database_name": "briefly-db",
-			"database_id": "00000000-0000-0000-0000-000000000001",
+			"database_id": "c90cd421-1507-4604-b4dc-82d7448b75bc",
 			"migrations_dir": "drizzle/migrations"
 		}
 	],
 	"r2_buckets": [
 		{
 			"binding": "UPLOADS",
-			"bucket_name": "briefly-uploads"
+			"bucket_name": "briefly"
 		}
 	]
 }
