@@ -21,28 +21,31 @@
 	/>
 
 	<div class="bento-grid bento-grid--stats">
-		<div class="card">
+		<a class="card bento-tile-link stat-tile" href="/admin/clients">
 			<p class="stat-label">Clients</p>
 			<p class="stat-value">{stats.clients}</p>
-		</div>
-		<div class="card">
+		</a>
+		<a class="card bento-tile-link stat-tile" href="/admin/question-sets">
 			<p class="stat-label">Categories</p>
 			<p class="stat-value">{stats.categories}</p>
-		</div>
-		<div class="card">
-			<p class="stat-label">Outstanding</p>
-			<p class="stat-value">{stats.assignments}</p>
-		</div>
+		</a>
+		<a class="card bento-tile-link stat-tile" href="/admin/submissions/unfinished">
+			<p class="stat-label">Pending</p>
+			<p class="stat-value">{stats.pending}</p>
+		</a>
 	</div>
 
 	<div class="card bento-tile--full">
 		<div class="section-header">
-			<h2>Recent submissions</h2>
+			<div>
+				<h2>Recent submissions</h2>
+				<p class="section-lead">Submitted in the last 90 days</p>
+			</div>
 			<Btn href="/admin/briefs/new">New Brief</Btn>
 		</div>
 
 		{#if recentAssignments.length === 0}
-			<p class="empty-state">No submissions yet.</p>
+			<p class="empty-state">No submissions in the last 90 days.</p>
 		{:else}
 			<ul class="record-list--stack">
 				{#each recentAssignments as assignment (assignment.id)}
@@ -61,8 +64,8 @@
 								<dd>{assignment.categoriesLabel}</dd>
 							</div>
 							<div>
-								<dt>Created</dt>
-								<dd>{formatRelativeTime(new Date(assignment.createdAt))}</dd>
+								<dt>Submitted</dt>
+								<dd>{formatRelativeTime(new Date(assignment.submittedAt!))}</dd>
 							</div>
 						</dl>
 						<div class="record-card-actions">
@@ -78,7 +81,7 @@
 							<th>Company</th>
 							<th class="hide-md">Categories</th>
 							<th>Status</th>
-							<th>Created</th>
+							<th>Submitted</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -95,7 +98,7 @@
 										Not started
 									{/if}
 								</td>
-								<td>{formatRelativeTime(new Date(assignment.createdAt))}</td>
+								<td>{formatRelativeTime(new Date(assignment.submittedAt!))}</td>
 							</tr>
 						{/each}
 					</tbody>
@@ -104,3 +107,11 @@
 		{/if}
 	</div>
 </PageShell>
+
+<style>
+	.section-lead {
+		margin-top: 0.15rem;
+		font-size: 0.875rem;
+		color: var(--color-muted);
+	}
+</style>

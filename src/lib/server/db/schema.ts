@@ -1,6 +1,7 @@
 import { relations } from 'drizzle-orm';
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import type { QuestionCategory } from '$lib/categories';
+import { createClientId, createQuestionId } from '$lib/ids';
 import type { QuestionInputRestriction } from '$lib/question-restrictions';
 
 export const questionTypes = [
@@ -19,7 +20,7 @@ export type ResponseStatus = 'draft' | 'submitted';
 export const clients = sqliteTable('clients', {
 	id: text('id')
 		.primaryKey()
-		.$defaultFn(() => crypto.randomUUID()),
+		.$defaultFn(() => createClientId()),
 	company: text('company').notNull(),
 	contactName: text('contact_name').notNull(),
 	email: text('email').notNull(),
@@ -48,7 +49,7 @@ export const questionSets = sqliteTable('question_sets', {
 export const questions = sqliteTable('questions', {
 	id: text('id')
 		.primaryKey()
-		.$defaultFn(() => crypto.randomUUID()),
+		.$defaultFn(() => createQuestionId()),
 	questionSetId: text('question_set_id')
 		.notNull()
 		.references(() => questionSets.id, { onDelete: 'cascade' }),

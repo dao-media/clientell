@@ -6,6 +6,10 @@
 		linkDisplayName,
 		type AttachmentItem
 	} from '$lib/attachments';
+	import FileText from '@lucide/svelte/icons/file-text';
+	import Image from '@lucide/svelte/icons/image';
+	import Link2 from '@lucide/svelte/icons/link-2';
+	import Video from '@lucide/svelte/icons/video';
 
 	let {
 		questionId,
@@ -23,11 +27,17 @@
 
 	let linkInput = $state('');
 	let linkError = $state('');
+	let showLinkInput = $state(false);
 	let dragging = $state(false);
 	let uploading = $state(false);
 	let uploadError = $state('');
 
+	let imageInput = $state<HTMLInputElement | null>(null);
+	let videoInput = $state<HTMLInputElement | null>(null);
+	let fileInput = $state<HTMLInputElement | null>(null);
+
 	const fieldName = $derived(attachmentAnswerKey(questionId));
+	const interactive = $derived(!disabled && !preview);
 
 	function removeAttachment(id: string) {
 		attachments = attachments.filter((item) => item.id !== id);
@@ -52,10 +62,11 @@
 			}
 		];
 		linkInput = '';
+		showLinkInput = false;
 	}
 
 	async function uploadFiles(fileList: FileList | File[]) {
-		if (disabled || preview) return;
+		if (!interactive) return;
 		uploadError = '';
 		uploading = true;
 
@@ -96,12 +107,21 @@
 	}
 
 	function onPaste(event: ClipboardEvent) {
+		if (!interactive) return;
 		const text = event.clipboardData?.getData('text')?.trim();
 		if (text && isValidHttpUrl(text)) {
 			event.preventDefault();
 			linkInput = text;
+			showLinkInput = true;
 			addLink();
 		}
+	}
+
+	function toggleLinkInput() {
+		if (!interactive) return;
+		showLinkInput = !showLinkInput;
+		linkError = '';
+		if (!showLinkInput) linkInput = '';
 	}
 </script>
 
@@ -109,59 +129,116 @@
 	<input type="hidden" name={fieldName} value={JSON.stringify(attachments)} />
 
 	<div
-		class="dropzone"
+		class="media-bin"
 		class:dragging
-		class:disabled={disabled || preview}
+		class:disabled={!interactive}
+		role="region"
+		aria-label="Attachments"
+		tabindex={interactive ? 0 : -1}
+		onpaste={onPaste}
 		ondragover={(event) => {
 			event.preventDefault();
-			if (!disabled && !preview) dragging = true;
+			if (interactive) dragging = true;
 		}}
 		ondragleave={() => {
 			dragging = false;
 		}}
 		ondrop={onDrop}
 	>
-		<p class="dropzone-title">
-			{#if preview}
-				File and link uploader preview
-			{:else if uploading}
-				Uploading…
-			{:else}
-				Drag and drop files here
-			{/if}
-		</p>
-		<p class="dropzone-help">
-			{#if preview}
-				Clients can paste links or upload files when this question is enabled.
-			{:else}
-				Or choose files below. You can also paste a link into the field.
-			{/if}
-		</p>
+		<div class="media-toolbar">
+			<button
+				type="button"
+				class="media-btn"
+				title="Add image"
+				disabled={!interactive || uploading}
+				onclick={() => imageInput?.click()}
+			>
+				<Image size={16} aria-hidden="true" />
+				<span>Image</span>
+			</button>
+			<button
+				type="button"
+				class="media-btn"
+				class:active={showLinkInput}
+				title="Add link"
+				disabled={!interactive}
+				onclick={toggleLinkInput}
+			>
+				<Link2 size={16} aria-hidden="true" />
+				<span>Link</span>
+			</button>
+			<button
+				type="button"
+				class="media-btn"
+				title="Add video"
+				disabled={!interactive || uploading}
+				onclick={() => videoInput?.click()}
+			>
+				<Video size={16} aria-hidden="true" />
+				<span>Video</span>
+			</button>
+			<button
+				type="button"
+				class="media-btn"
+				title="Add file"
+				disabled={!interactive || uploading}
+				onclick={() => fileInput?.click()}
+			>
+				<FileText size={16} aria-hidden="true" />
+				<span>File</span>
+			</button>
+		</div>
 
-		{#if !disabled && !preview}
-			<label class="file-button">
-				Choose files
-				<input type="file" multiple onchange={onFileInput} />
-			</label>
+		{#if showLinkInput && interactive}
+			<div class="link-row">
+				<input
+					class="link-input"
+					type="url"
+					placeholder="Paste or type a link (https://…)"
+					bind:value={linkInput}
+					onkeydown={(event) => {
+						if (event.key === 'Enter') {
+							event.preventDefault();
+							addLink();
+						}
+						if (event.key === 'Escape') {
+							event.preventDefault();
+							showLinkInput = false;
+							linkInput = '';
+							linkError = '';
+						}
+					}}
+				/>
+				<button type="button" class="link-add" onclick={addLink}>Add</button>
+			</div>
 		{/if}
-	</div>
 
-	<div class="link-row">
-		<input
-			class="link-input"
-			type="url"
-			placeholder="Paste or type a link (https://…)"
-			bind:value={linkInput}
-			onpaste={onPaste}
-			onkeydown={(event) => {
-				if (event.key === 'Enter') {
-					event.preventDefault();
-					addLink();
-				}
-			}}
-			{disabled}
-		/>
-		<button type="button" class="link-add" onclick={addLink} disabled={disabled || preview}>Add link</button>
+		<div class="media-body">
+			{#if attachments.length > 0}
+				<div class="preview-grid">
+					{#each attachments as item (item.id)}
+						<AttachmentPreviewCard
+							{item}
+							compact
+							disabled={!interactive}
+							onRemove={interactive ? removeAttachment : undefined}
+						/>
+					{/each}
+				</div>
+			{:else}
+				<p class="bin-empty">
+					{#if preview}
+						Clients add images, links, videos, and files here.
+					{:else if uploading}
+						Uploading…
+					{:else if dragging}
+						Drop to add
+					{:else}
+						Drop files here or use the buttons above
+					{/if}
+				</p>
+			{/if}
+		</div>
 	</div>
 
 	{#if linkError}
@@ -171,107 +248,140 @@
 		<p class="uploader-error">{uploadError}</p>
 	{/if}
 
-	{#if attachments.length > 0}
-		<div class="preview-grid">
-			{#each attachments as item (item.id)}
-				<AttachmentPreviewCard
-					{item}
-					disabled={disabled || preview}
-					onRemove={disabled || preview ? undefined : removeAttachment}
-				/>
-			{/each}
-		</div>
+	{#if interactive}
+		<input bind:this={imageInput} type="file" accept="image/*" multiple hidden onchange={onFileInput} />
+		<input bind:this={videoInput} type="file" accept="video/*" multiple hidden onchange={onFileInput} />
+		<input bind:this={fileInput} type="file" multiple hidden onchange={onFileInput} />
 	{/if}
 </div>
 
 <style>
 	.uploader {
 		display: grid;
-		gap: 0.75rem;
+		gap: 0.5rem;
 		margin-top: 0.75rem;
 	}
 
-	.uploader.preview .dropzone {
-		border-style: dashed;
-		opacity: 0.95;
-	}
-
-	.dropzone {
-		padding: 1rem;
-		border: 1px dashed var(--color-border);
-		background: var(--color-surface-muted);
-		text-align: center;
+	.media-bin {
+		display: flex;
+		flex-direction: column;
+		aspect-ratio: 1;
+		max-width: 28rem;
+		border: 1px solid var(--color-border);
 		border-radius: var(--radius-lg);
+		background: var(--color-surface-muted);
+		overflow: hidden;
 	}
 
-	.dropzone.dragging {
+	.media-bin.dragging {
 		border-color: var(--color-accent);
 		background: var(--color-surface-hover);
 	}
 
-	.dropzone.disabled {
-		opacity: 0.85;
+	.media-bin.disabled {
+		opacity: 0.92;
 	}
 
-	.dropzone-title {
-		font-size: 0.875rem;
-		font-weight: 600;
+	.media-toolbar {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.35rem;
+		padding: 0.5rem;
+		border-bottom: 1px solid var(--color-border);
+		background: var(--color-surface);
 	}
 
-	.dropzone-help {
-		margin-top: 0.25rem;
+	.toolbar-label {
 		font-size: 0.75rem;
 		color: var(--color-muted);
+		padding: 0.35rem 0.25rem;
 	}
 
-	.file-button {
+	.media-btn {
 		display: inline-flex;
-		margin-top: 0.75rem;
-		padding: 0.45rem 0.85rem;
-		border: 1px solid var(--color-accent);
-		color: var(--color-accent);
-		font-size: 0.875rem;
-		cursor: pointer;
+		align-items: center;
+		gap: 0.3rem;
+		padding: 0.35rem 0.55rem;
+		border: 1px solid var(--color-border);
 		border-radius: var(--radius);
+		background: var(--color-surface-muted);
+		color: var(--color-ink);
+		font: inherit;
+		font-size: 0.75rem;
+		cursor: pointer;
 	}
 
-	.file-button input {
-		display: none;
+	.media-btn:hover:not(:disabled) {
+		border-color: var(--color-accent);
+		color: var(--color-accent);
+	}
+
+	.media-btn.active {
+		border-color: var(--color-accent);
+		background: var(--color-surface-hover);
+		color: var(--color-accent);
+	}
+
+	.media-btn:disabled {
+		opacity: 0.55;
+		cursor: not-allowed;
 	}
 
 	.link-row {
 		display: grid;
 		grid-template-columns: 1fr auto;
-		gap: 0.5rem;
+		gap: 0.35rem;
+		padding: 0.5rem;
+		border-bottom: 1px solid var(--color-border);
+		background: var(--color-surface);
 	}
 
 	.link-input {
 		width: 100%;
-		padding: 0.65rem 0.75rem;
+		min-width: 0;
+		padding: 0.45rem 0.6rem;
 		border: 1px solid var(--color-border);
 		background: var(--color-surface);
 		font: inherit;
+		font-size: 0.8125rem;
 		border-radius: var(--radius);
 	}
 
 	.link-add {
-		padding: 0.65rem 0.85rem;
+		padding: 0.45rem 0.65rem;
 		border: 0;
 		background: var(--color-accent);
 		color: #fff;
 		cursor: pointer;
 		font: inherit;
+		font-size: 0.8125rem;
 		border-radius: var(--radius);
 	}
 
-	.link-add:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
+	.media-body {
+		flex: 1;
+		min-height: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.75rem;
+		overflow: auto;
 	}
 
 	.preview-grid {
-		display: grid;
-		gap: 0.75rem;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		align-content: flex-start;
+		width: 100%;
+	}
+
+	.bin-empty {
+		margin: 0;
+		text-align: center;
+		font-size: 0.8125rem;
+		color: var(--color-muted);
+		padding: 0 0.5rem;
 	}
 
 	.uploader-error {
@@ -280,12 +390,24 @@
 	}
 
 	@media (max-width: 480px) {
-		.link-row {
-			grid-template-columns: minmax(0, 1fr);
+		.media-bin {
+			max-width: none;
 		}
 
-		.link-add {
-			width: 100%;
+		.media-btn span {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			padding: 0;
+			margin: -1px;
+			overflow: hidden;
+			clip: rect(0, 0, 0, 0);
+			white-space: nowrap;
+			border: 0;
+		}
+
+		.link-row {
+			grid-template-columns: minmax(0, 1fr);
 		}
 	}
 </style>

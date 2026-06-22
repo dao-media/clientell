@@ -128,3 +128,32 @@ export async function sendPortalLinkEmail(
 
 	return sendEmail(platform, { to: params.to, subject, html, text });
 }
+
+export async function sendBriefSubmittedNotification(
+	platform: App.Platform | undefined,
+	params: {
+		to: string;
+		clientCompany: string;
+		clientContact: string;
+		briefTitle: string;
+		submissionUrl: string;
+	}
+): Promise<ReminderResult> {
+	const subject = `Brief completed — ${params.clientCompany}`;
+	const text = [
+		`${params.clientContact} at ${params.clientCompany} submitted their creative brief.`,
+		`Brief: ${params.briefTitle}`,
+		'',
+		`Review it: ${params.submissionUrl}`,
+		'',
+		'— Briefly'
+	].join('\n');
+	const html = `
+		<p><strong>${params.clientContact}</strong> at <strong>${params.clientCompany}</strong> submitted their creative brief.</p>
+		<p>Brief: <strong>${params.briefTitle}</strong></p>
+		<p><a href="${params.submissionUrl}">Open submission in Briefly</a></p>
+		<p>— Briefly</p>
+	`;
+
+	return sendEmail(platform, { to: params.to, subject, html, text });
+}

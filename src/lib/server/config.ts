@@ -15,3 +15,11 @@ export function getPublicOrigin(): string {
 export function getPortalUrl(): string {
 	return `${getPublicOrigin()}/portal`;
 }
+
+export function getAdminNotificationEmail(): string {
+	return (env.ADMIN_NOTIFICATION_EMAIL ?? env.EMAIL_FROM ?? 'briefly@daneoleary.com').trim();
+}
+
+export function adminSubmissionUrl(assignmentId: string): string {
+	return `${getPublicOrigin()}/admin/submissions/${assignmentId}`;
+}

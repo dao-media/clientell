@@ -3,12 +3,15 @@ import {
 	clientPortalLoginFromForm
 } from '$lib/server/auth/portal-login';
 import { loginDurationFromForm } from '$lib/server/auth/login-duration';
-import { redirectAdminAfterLogin, redirectClientAfterLogin } from '$lib/server/auth/routing';
+import { redirectAdminAfterLogin, redirectAuthenticatedUser, redirectClientAfterLogin } from '$lib/server/auth/routing';
 import { getAdminPassword, setAdminSession } from '$lib/server/auth/session';
 import { normalizeEmail } from '$lib/utils';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async () => ({});
+export const load: PageServerLoad = async ({ locals, url }) => {
+	await redirectAuthenticatedUser(locals, url.pathname);
+	return {};
+};
 
 export const actions: Actions = {
 	adminLogin: async ({ request, cookies, url, locals }) => {

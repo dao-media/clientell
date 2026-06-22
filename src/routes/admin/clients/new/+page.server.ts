@@ -1,4 +1,5 @@
 import { fail, redirect } from '@sveltejs/kit';
+import { createClientId } from '$lib/ids';
 import { clients } from '$lib/server/db/schema';
 import { formatUsPhoneInput } from '$lib/phone';
 import { normalizeEmail } from '$lib/utils';
@@ -18,6 +19,7 @@ export const actions: Actions = {
 		}
 
 		await locals.db.insert(clients).values({
+			id: createClientId(),
 			company,
 			contactName,
 			email,

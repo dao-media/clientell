@@ -12,12 +12,12 @@
 
 	const submissionLinks = [
 		{ href: '/admin/submissions', label: 'All' },
-		{ href: '/admin/submissions/unfinished', label: 'Unfinished' },
+		{ href: '/admin/submissions/unfinished', label: 'Pending' },
 		{ href: '/admin/submissions/completed', label: 'Completed' }
 	] as const;
 
 	const pathname = $derived($page.url.pathname);
-	const brandHref = $derived(admin ? '/admin' : client ? '/portal/brief' : '/');
+	const brandHref = '/';
 	const showAdminNav = $derived(admin);
 	const hasNav = $derived(showAdminNav);
 	const manageActive = $derived(

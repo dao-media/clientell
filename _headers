@@ -1,0 +1,7 @@
+/admin/*
+  Cache-Control: private, no-cache, no-store, must-revalidate
+  Pragma: no-cache
+
+/portal/*
+  Cache-Control: private, no-cache, no-store, must-revalidate
+  Pragma: no-cache

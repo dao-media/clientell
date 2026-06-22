@@ -49,6 +49,14 @@
 			{/if}
 			<div class="form-actions">
 				<Btn href="/admin/submissions/{form.assignmentId}">Open submission</Btn>
+				<Btn
+					variant="secondary"
+					href="/admin/submissions/{form.assignmentId}/preview"
+					target="_blank"
+					rel="noopener"
+				>
+					Preview brief
+				</Btn>
 				<Btn variant="secondary" href="/admin/briefs/new">Create another</Btn>
 			</div>
 		</div>

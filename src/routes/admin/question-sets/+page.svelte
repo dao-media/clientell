@@ -14,6 +14,7 @@
 	import Alert from '$lib/components/ui/Alert.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import { PLACEHOLDER_CATEGORY_TAB_ID, type QuestionCategory } from '$lib/categories';
+	import AdminCardGrid from '$lib/components/layout/AdminCardGrid.svelte';
 	import PageHeader from '$lib/components/layout/PageHeader.svelte';
 	import PageShell from '$lib/components/layout/PageShell.svelte';
 	import type { ActionData, PageData } from './$types';
@@ -22,14 +23,6 @@
 
 	const activeSet = $derived((page.data as PageData).activeSet);
 	const questions = $derived((page.data as PageData).questions);
-	const categoryCount = $derived(activeSet?.categories.length ?? 0);
-	const questionCount = $derived(questions.length);
-	const workspaceSummary = $derived.by(() => {
-		const categories =
-			categoryCount === 1 ? '1 category' : `${categoryCount} categories`;
-		const listed = questionCount === 1 ? '1 question' : `${questionCount} questions`;
-		return `${categories} · ${listed}`;
-	});
 
 	refreshOnVisible(adminDataKeys.questions, adminDataKeys.dashboard);
 
@@ -196,7 +189,7 @@
 			required: true,
 			allowAttachments: false,
 			inputRestriction: null,
-			categories: [],
+			categories: hasRealCategory ? [activeCategoryId] : [],
 			isActive: true
 		};
 		questionModalOpen = true;
@@ -224,12 +217,23 @@
 		};
 		questionModalOpen = true;
 	}
+
+	function confirmBulkDelete(event: SubmitEvent) {
+		if (
+			!confirm(
+				selectedCount === 1
+					? 'Delete this question?'
+					: `Delete ${selectedCount} questions?`
+			)
+		) {
+			event.preventDefault();
+		}
+	}
 </script>
 
 <PageShell>
 	<PageHeader
 		title="Manage Briefs"
-		kicker={workspaceSummary}
 		lead="Organize intake questions by category. Categories define which questions appear on each brief."
 	/>
 
@@ -237,10 +241,37 @@
 		<div class="questions-workspace">
 			<header class="workspace-header">
 				<div class="header-actions">
-					<Btn onclick={openNewQuestion} disabled={selectMode}>Add question</Btn>
-					<Btn variant={selectMode ? 'primary' : 'secondary'} onclick={toggleSelectMode}>
-						{selectMode ? 'Done' : 'Select'}
-					</Btn>
+					{#if selectMode}
+						<form
+							method="POST"
+							action="?/bulkDeleteQuestions"
+							class="header-actions-form"
+							use:enhance={() => {
+								return async ({ result, update }) => {
+									await update({ reset: false, invalidateAll: false });
+									if (result.type === 'success') {
+										await refreshAfterQuestionChange();
+										selectedQuestionIds = [];
+										selectMode = false;
+									}
+								};
+							}}
+							onsubmit={confirmBulkDelete}
+						>
+							<input type="hidden" name="setId" value={activeSet.id} />
+							{#each selectedQuestionIds as questionId (questionId)}
+								<input type="hidden" name="questionIds" value={questionId} />
+							{/each}
+
+							<Btn type="button" variant="secondary" onclick={toggleSelectMode}>Done</Btn>
+							{#if selectedCount > 0}
+								<Btn type="submit" variant="danger">Delete</Btn>
+							{/if}
+						</form>
+					{:else}
+						<Btn onclick={openNewQuestion}>Add question</Btn>
+						<Btn variant="secondary" onclick={toggleSelectMode}>Select</Btn>
+					{/if}
 				</div>
 			</header>
 
@@ -288,6 +319,17 @@
 				{#if form?.bulkError}
 					<Alert variant="error" title="Could not update questions" subtitle={form.bulkError} />
 				{/if}
+				{#if form?.bulkDeleteError}
+					<Alert variant="error" title="Could not delete questions" subtitle={form.bulkDeleteError} />
+				{/if}
+				{#if form?.success && typeof form.deletedCount === 'number'}
+					<Alert
+						variant="success"
+						title={form.deletedCount === 1
+							? 'Question deleted'
+							: `${form.deletedCount} questions deleted`}
+					/>
+				{/if}
 			{/if}
 
 			<section class="categories-section">
@@ -325,7 +367,7 @@
 						<Btn variant="secondary" onclick={openNewQuestion}>Add question</Btn>
 					</div>
 				{:else}
-					<div class="admin-card-grid">
+					<AdminCardGrid>
 						{#each filteredQuestions as question (question.id)}
 							<QuestionCard
 								{question}
@@ -337,7 +379,7 @@
 								onedit={openEditQuestion}
 							/>
 						{/each}
-					</div>
+					</AdminCardGrid>
 				{/if}
 			</section>
 		</div>
@@ -375,6 +417,13 @@
 		flex-wrap: wrap;
 		align-items: center;
 		margin-left: auto;
+	}
+
+	.header-actions-form {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+		align-items: center;
 	}
 
 	.bulk-toolbar {

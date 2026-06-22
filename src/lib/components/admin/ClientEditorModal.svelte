@@ -1,14 +1,11 @@
 <script lang="ts">
 	import { deserialize } from '$app/forms';
-	import { refreshAfterClientChange } from '$lib/admin/refresh-data';
 	import CategoryTagPicker from '$lib/components/admin/CategoryTagPicker.svelte';
 	import InlineEditableField from '$lib/components/admin/InlineEditableField.svelte';
 	import SubmissionDetailPanel from '$lib/components/admin/SubmissionDetailPanel.svelte';
 	import Btn from '$lib/components/Btn.svelte';
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import Alert from '$lib/components/ui/Alert.svelte';
-	import Field from '$lib/components/ui/Field.svelte';
-	import Modal from '$lib/components/ui/Modal.svelte';
 	import {
 		fetchClientBriefs,
 		fetchSubmissionDetail,
@@ -37,18 +34,18 @@
 		open = $bindable(false),
 		client = null,
 		serviceOptions = [],
-		error = '',
+		clientError = '',
 		deleteError = '',
-		onclose,
-		onsaved
+		onsaved,
+		onclose
 	}: {
 		open?: boolean;
 		client?: ClientDraft | null;
 		serviceOptions?: QuestionCategory[];
-		error?: string;
+		clientError?: string;
 		deleteError?: string;
-		onclose?: () => void;
 		onsaved?: () => void | Promise<void>;
+		onclose?: () => void;
 	} = $props();
 
 	let company = $state('');
@@ -73,29 +70,33 @@
 	let editingServices = $state(false);
 	let servicesDraft = $state<string[]>([]);
 	let servicesSaving = $state(false);
+	let wasOpen = $state(false);
 
 	$effect(() => {
-		if (open) {
-			company = client?.company ?? '';
-			contactName = client?.contactName ?? '';
-			email = client?.email ?? '';
-			phone = formatUsPhoneInput(client?.phone ?? '');
-			selectedServices = [...(client?.services ?? [])];
-			saveError = '';
-			view = 'client';
-			slideDirection = 'forward';
-			animatePanel = false;
-			selectedAssignmentId = null;
-			detail = null;
-			detailError = '';
-			editingServices = false;
+		const justOpened = open && !wasOpen;
+		wasOpen = open;
 
-			if (client?.id) {
-				void loadBriefs(client.id);
-			} else {
-				briefs = [];
-				briefsError = '';
-			}
+		if (!justOpened) return;
+
+		company = client?.company ?? '';
+		contactName = client?.contactName ?? '';
+		email = client?.email ?? '';
+		phone = formatUsPhoneInput(client?.phone ?? '');
+		selectedServices = [...(client?.services ?? [])];
+		saveError = '';
+		view = 'client';
+		slideDirection = 'forward';
+		animatePanel = false;
+		selectedAssignmentId = null;
+		detail = null;
+		detailError = '';
+		editingServices = false;
+
+		if (client?.id) {
+			void loadBriefs(client.id);
+		} else {
+			briefs = [];
+			briefsError = '';
 		}
 	});
 
@@ -106,6 +107,29 @@
 			? formatCategoryList(detail.briefCategories, detail.setCategories)
 			: detail?.questionSet.title ?? 'Brief preview'
 	);
+
+	async function notifySaved(result: import('@sveltejs/kit').ActionResult) {
+		if (result.type === 'success') {
+			await onsaved?.();
+			return true;
+		}
+
+		return false;
+	}
+
+	async function afterClientMutation(
+		result: import('@sveltejs/kit').ActionResult,
+		update: (options?: { reset?: boolean }) => Promise<void>,
+		options: { closeOnSuccess?: boolean } = {}
+	) {
+		const saved = await notifySaved(result);
+		await update({ reset: false });
+
+		if (saved && options.closeOnSuccess) {
+			open = false;
+			onclose?.();
+		}
+	}
 
 	function close() {
 		open = false;
@@ -160,7 +184,6 @@
 
 		if (result.type === 'success') {
 			saveError = '';
-			await refreshAfterClientChange();
 			await onsaved?.();
 			return true;
 		}
@@ -252,7 +275,7 @@
 	});
 </script>
 
-{#if isEdit && open}
+{#if open}
 	<div class="client-modal-overlay" onclick={onBackdropClick} role="presentation">
 		<div class="client-modal-card" role="dialog" aria-modal="true" aria-labelledby="client-modal-title">
 			<header class="client-modal-header">
@@ -423,12 +446,7 @@
 									class="delete-form"
 									use:enhance={() => {
 										return async ({ result, update }) => {
-											await update({ reset: false, invalidateAll: false });
-											if (result.type === 'success') {
-												await refreshAfterClientChange();
-												await onsaved?.();
-												close();
-											}
+											await afterClientMutation(result, update, { closeOnSuccess: true });
 										};
 									}}
 									onsubmit={(event) => {
@@ -462,49 +480,6 @@
 			</div>
 		</div>
 	</div>
-{:else if open}
-	<Modal bind:open title="Add client" size="sm" {onclose}>
-		<form
-			method="POST"
-			action="?/saveClient"
-			class="client-form"
-			use:enhance={() => {
-				return async ({ result, update }) => {
-					await update({ reset: false, invalidateAll: false });
-					if (result.type === 'success') {
-						await refreshAfterClientChange();
-						await onsaved?.();
-						open = false;
-						onclose?.();
-					}
-				};
-			}}
-		>
-			<Field labelText="Company" name="company" bind:value={company} required />
-			<Field labelText="Point of contact" name="contactName" bind:value={contactName} required />
-			<Field labelText="Email" name="email" type="email" bind:value={email} required />
-			<Field labelText="Phone" name="phone" type="tel" bind:value={phone} helperText="Optional" />
-
-			<CategoryTagPicker
-				categories={serviceOptions}
-				bind:selected={selectedServices}
-				name="services"
-				legend="Services"
-				placeholder="Search or select services…"
-				emptyHint="Create categories in Manage Briefs first. Those become the services you can track here."
-			/>
-			<p class="services-help">Track the services this client has requested so far.</p>
-
-			{#if error}
-				<Alert variant="error" title="Could not save client" subtitle={error} />
-			{/if}
-
-			<div class="modal-actions">
-				<Btn variant="secondary" type="button" onclick={() => (open = false)}>Cancel</Btn>
-				<Btn type="submit">Save client</Btn>
-			</div>
-		</form>
-	</Modal>
 {/if}
 
 <style>
@@ -779,9 +754,16 @@
 	.brief-list {
 		display: grid;
 		gap: 0.5rem;
+		grid-template-columns: minmax(0, 1fr);
 		list-style: none;
 		padding: 0;
 		margin: 0;
+	}
+
+	@media (min-width: 768px) {
+		.brief-list {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
 	}
 
 	.brief-row {
@@ -843,27 +825,6 @@
 		font-size: 0.75rem;
 		font-weight: 600;
 		color: var(--color-muted);
-	}
-
-	.client-form {
-		display: grid;
-		gap: 1rem;
-	}
-
-	.services-help {
-		margin-top: -0.25rem;
-		font-size: 0.8125rem;
-		color: var(--color-muted);
-	}
-
-	.modal-actions {
-		display: flex;
-		justify-content: flex-end;
-		gap: 0.75rem;
-		flex-wrap: wrap;
-		padding-top: 0.5rem;
-		border-top: 1px solid var(--color-border);
-		margin-top: 0.5rem;
 	}
 
 	@media (min-width: 672px) {

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
-	import AttachmentPreviewCard from '$lib/components/AttachmentPreviewCard.svelte';
+	import AttachmentPill from '$lib/components/AttachmentPill.svelte';
 	import Btn from '$lib/components/Btn.svelte';
 	import Chip from '$lib/components/ui/Chip.svelte';
 	import Alert from '$lib/components/ui/Alert.svelte';
@@ -10,6 +10,7 @@
 	import { formatCategoryList } from '$lib/categories';
 	import { formatAnswer } from '$lib/utils';
 	import FileDown from '@lucide/svelte/icons/file-down';
+	import Eye from '@lucide/svelte/icons/eye';
 	import Mail from '@lucide/svelte/icons/mail';
 	import CircleX from '@lucide/svelte/icons/circle-x';
 
@@ -129,9 +130,9 @@
 							{#if question.allowAttachments}
 								{@const items = parseAttachments(answers[attachmentAnswerKey(question.id)])}
 								{#if items.length > 0}
-									<div class="attachment-list">
+									<div class="attachment-pills">
 										{#each items as item (item.id)}
-											<AttachmentPreviewCard {item} disabled />
+											<AttachmentPill {item} />
 										{/each}
 									</div>
 								{/if}
@@ -158,6 +159,10 @@
 					<Btn type="submit" icon={Mail}>Send brief</Btn>
 				</form>
 			{/if}
+
+			<Btn variant="secondary" href="{actionBase}/preview" target="_blank" rel="noopener" icon={Eye}>
+				Preview brief
+			</Btn>
 
 			<Btn variant="secondary" href="{actionBase}/pdf" target="_blank" rel="noopener" icon={FileDown}>
 				Export PDF
@@ -250,10 +255,11 @@
 		margin-top: 0.35rem;
 	}
 
-	.attachment-list {
-		display: grid;
-		gap: 0.75rem;
-		margin-top: 0.75rem;
+	.attachment-pills {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		margin-top: 0.5rem;
 	}
 
 	.submission-detail-footer {

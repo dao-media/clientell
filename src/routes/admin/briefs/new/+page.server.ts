@@ -7,12 +7,14 @@ import {
 	formatCategoryList
 } from '$lib/categories';
 import { generatePin, hashPin } from '$lib/server/auth/pin';
+import { registerPageDataDepends } from '$lib/admin/refresh-data';
 import { ensureBriefWorkspace } from '$lib/server/brief-workspace';
 import { getPortalUrl } from '$lib/server/config';
 import { assignments, clients, responses } from '$lib/server/db/schema';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, depends, url }) => {
+	registerPageDataDepends(depends, url.pathname, 'briefly:clients', 'briefly:dashboard');
 	const [clientRows, workspace] = await Promise.all([
 		locals.db.select().from(clients).orderBy(asc(clients.company)),
 		ensureBriefWorkspace(locals.db)

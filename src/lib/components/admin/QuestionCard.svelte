@@ -4,7 +4,8 @@
 	import Btn from '$lib/components/Btn.svelte';
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import Chip from '$lib/components/ui/Chip.svelte';
-	import { formatCategoryList, type QuestionCategory } from '$lib/categories';
+	import CategoryDots from '$lib/components/admin/CategoryDots.svelte';
+	import type { QuestionCategory } from '$lib/categories';
 	import { restrictionLabel, type QuestionInputRestriction } from '$lib/question-restrictions';
 
 	type QuestionItem = {
@@ -76,7 +77,7 @@
 		{#if question.helpText}
 			<p class="question-details">{question.helpText}</p>
 		{/if}
-		<p class="question-meta">{formatCategoryList(question.categories, categories)}</p>
+		<CategoryDots categoryIds={question.categories} {categories} class="question-meta" />
 	</button>
 
 	{#if !selectMode}
@@ -111,6 +112,8 @@
 		grid-template-columns: auto 1fr auto;
 		align-items: start;
 		border-radius: var(--radius-lg);
+		width: 100%;
+		max-width: 100%;
 	}
 
 	.question-card:not(.select-mode) {
@@ -170,8 +173,7 @@
 		gap: 0.35rem;
 	}
 
-	.question-details,
-	.question-meta {
+	.question-details {
 		font-size: 0.875rem;
 		color: var(--color-muted);
 	}

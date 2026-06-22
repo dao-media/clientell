@@ -2,7 +2,7 @@
 	import Btn from '$lib/components/Btn.svelte';
 	import Alert from '$lib/components/ui/Alert.svelte';
 	import Chip from '$lib/components/ui/Chip.svelte';
-	import AttachmentPreviewCard from '$lib/components/AttachmentPreviewCard.svelte';
+	import AttachmentPill from '$lib/components/AttachmentPill.svelte';
 	import PageHeader from '$lib/components/layout/PageHeader.svelte';
 	import PageShell from '$lib/components/layout/PageShell.svelte';
 	import { attachmentAnswerKey, parseAttachments } from '$lib/attachments';
@@ -10,6 +10,7 @@
 	import { formatUsPhoneDisplay } from '$lib/phone';
 	import { formatCategoryList } from '$lib/categories';
 	import type { ActionData, PageData } from './$types';
+	import Eye from '@lucide/svelte/icons/eye';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -57,6 +58,9 @@
 				<Btn variant="secondary" type="submit">Send portal link</Btn>
 			</form>
 		{/if}
+		<Btn variant="secondary" href="/admin/submissions/{data.assignment.id}/preview" target="_blank" rel="noopener" icon={Eye}>
+			Preview brief
+		</Btn>
 		<Btn variant="ghost" href="/admin/submissions/{data.assignment.id}/pdf">Export PDF</Btn>
 		<form method="POST" action="?/rotatePin">
 			<Btn variant="ghost" type="submit">Generate new PIN</Btn>
@@ -128,9 +132,9 @@
 						{#if question.allowAttachments}
 							{@const items = parseAttachments(answers[attachmentAnswerKey(question.id)])}
 							{#if items.length > 0}
-								<div class="attachment-list">
+								<div class="attachment-pills">
 									{#each items as item (item.id)}
-										<AttachmentPreviewCard {item} disabled />
+										<AttachmentPill {item} />
 									{/each}
 								</div>
 							{/if}
@@ -187,9 +191,10 @@
 		font-size: 0.875rem;
 	}
 
-	.attachment-list {
-		display: grid;
-		gap: 0.75rem;
-		margin-top: 0.75rem;
+	.attachment-pills {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		margin-top: 0.5rem;
 	}
 </style>

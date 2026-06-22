@@ -7,8 +7,10 @@ import {
 	validateQuestionCategories,
 	type QuestionCategory
 } from '$lib/categories';
+import { createQuestionId } from '$lib/ids';
 import { parseQuestionInputRestriction } from '$lib/question-restrictions';
 import { ensureBriefWorkspace } from '$lib/server/brief-workspace';
+import { registerPageDataDepends } from '$lib/admin/refresh-data';
 import { questionSets, questions } from '$lib/server/db/schema';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -21,8 +23,7 @@ function resolveSetId(data: FormData, workspaceId: string): string {
 }
 
 export const load: PageServerLoad = async ({ locals, url, depends }) => {
-	depends('briefly:questions');
-	depends('briefly:dashboard');
+	registerPageDataDepends(depends, url.pathname, 'briefly:questions', 'briefly:dashboard');
 
 	if (url.searchParams.has('all') || url.searchParams.has('set')) {
 		redirect(303, '/admin/question-sets');
@@ -153,6 +154,7 @@ export const actions: Actions = {
 			const nextOrder = existing.reduce((max, row) => Math.max(max, row.sortOrder), -1) + 1;
 
 			await locals.db.insert(questions).values({
+				id: createQuestionId(),
 				questionSetId: setId,
 				label,
 				helpText: helpText || null,
@@ -219,5 +221,27 @@ export const actions: Actions = {
 			.where(eq(questionSets.id, setId));
 
 		return { success: true };
+	},
+
+	bulkDeleteQuestions: async ({ request, locals }) => {
+		const activeSet = await ensureBriefWorkspace(locals.db);
+		const data = await request.formData();
+		const setId = resolveSetId(data, activeSet.id);
+		const questionIds = data
+			.getAll('questionIds')
+			.map((value) => String(value).trim())
+			.filter(Boolean);
+
+		if (questionIds.length === 0) {
+			return fail(400, { bulkDeleteError: 'Select at least one question.' });
+		}
+
+		await locals.db.delete(questions).where(inArray(questions.id, questionIds));
+		await locals.db
+			.update(questionSets)
+			.set({ updatedAt: new Date() })
+			.where(eq(questionSets.id, setId));
+
+		return { success: true, deletedCount: questionIds.length };
 	}
 };

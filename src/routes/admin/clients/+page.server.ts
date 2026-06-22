@@ -1,34 +1,33 @@
 import { fail } from '@sveltejs/kit';
-import { desc, eq, inArray } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import {
 	mergeCategoryDefinitions,
 	normalizeClientServiceIds,
 	parseCategoriesFromFormData
 } from '$lib/categories';
+import { createClientId } from '$lib/ids';
+import { registerPageDataDepends } from '$lib/admin/refresh-data';
+import { loadClientsPageData } from '$lib/server/clients-page';
 import { clients, questionSets } from '$lib/server/db/schema';
 import { formatUsPhoneInput } from '$lib/phone';
 import { normalizeEmail } from '$lib/utils';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ locals, depends }) => {
-	depends('briefly:clients');
-	depends('briefly:dashboard');
+export const load: PageServerLoad = async ({ locals, depends, url }) => {
+	registerPageDataDepends(depends, url.pathname, 'briefly:clients', 'briefly:dashboard');
+	return loadClientsPageData(locals.db);
+};
 
-	const [clientRows, setRows] = await Promise.all([
-		locals.db.select().from(clients).orderBy(desc(clients.createdAt)),
-		locals.db.select({ categories: questionSets.categories }).from(questionSets)
-	]);
-
-	const serviceOptions = mergeCategoryDefinitions(setRows.map((set) => set.categories));
-
+async function clientsAfterMutation(locals: App.Locals) {
+	const payload = await loadClientsPageData(locals.db);
 	return {
-		serviceOptions,
-		clients: clientRows.map((client) => ({
+		success: true as const,
+		clients: payload.clients.map((client) => ({
 			...client,
-			services: normalizeClientServiceIds(client.services ?? [], serviceOptions)
+			createdAt: client.createdAt.toISOString()
 		}))
 	};
-};
+}
 
 export const actions: Actions = {
 	saveClient: async ({ request, locals }) => {
@@ -62,6 +61,7 @@ export const actions: Actions = {
 				.where(eq(clients.id, clientId));
 		} else {
 			await locals.db.insert(clients).values({
+				id: createClientId(),
 				company,
 				contactName,
 				email,
@@ -70,7 +70,7 @@ export const actions: Actions = {
 			});
 		}
 
-		return { success: true };
+		return clientsAfterMutation(locals);
 	},
 
 	deleteClient: async ({ request, locals }) => {
@@ -83,7 +83,7 @@ export const actions: Actions = {
 
 		await locals.db.delete(clients).where(eq(clients.id, clientId));
 
-		return { success: true, deleted: true };
+		return { ...(await clientsAfterMutation(locals)), deleted: true };
 	},
 
 	bulkDeleteClients: async ({ request, locals }) => {
@@ -99,6 +99,6 @@ export const actions: Actions = {
 
 		await locals.db.delete(clients).where(inArray(clients.id, clientIds));
 
-		return { success: true, deletedCount: clientIds.length };
+		return { ...(await clientsAfterMutation(locals)), deletedCount: clientIds.length };
 	}
 };

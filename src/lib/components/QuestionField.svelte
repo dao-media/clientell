@@ -23,11 +23,13 @@
 	let {
 		question,
 		answers = $bindable<Record<string, unknown>>({}),
-		disabled = false
+		disabled = false,
+		preview = false
 	}: {
 		question: Question;
 		answers?: Record<string, unknown>;
 		disabled?: boolean;
+		preview?: boolean;
 	} = $props();
 
 	const attachmentKey = $derived(attachmentAnswerKey(question.id));
@@ -37,6 +39,7 @@
 	const restrictionHint = $derived(restrictionLabel(question.inputRestriction));
 	const answerValue = $derived(String(answers[question.id] ?? ''));
 	const restrictionStats = $derived(inputRestrictionStats(question.inputRestriction, answerValue));
+	const nativeRequired = $derived(question.required && !question.allowAttachments && !preview);
 
 	function validateCurrentAnswer(value: string) {
 		restrictionError =
@@ -85,7 +88,7 @@
 				updateAnswer((event.currentTarget as HTMLTextAreaElement).value);
 			}}
 			{disabled}
-			required={question.required}
+			required={nativeRequired}
 			aria-invalid={restrictionError ? 'true' : undefined}
 			aria-describedby={restrictionError ? `${question.id}-restriction-error` : undefined}
 		></textarea>
@@ -99,7 +102,7 @@
 				updateAnswer((event.currentTarget as HTMLSelectElement).value);
 			}}
 			{disabled}
-			required={question.required}
+			required={nativeRequired}
 		>
 			<option value="">Select an option</option>
 			{#each question.options ?? [] as option (option)}
@@ -139,7 +142,7 @@
 				updateAnswer((event.currentTarget as HTMLInputElement).value);
 			}}
 			{disabled}
-			required={question.required}
+			required={nativeRequired}
 			aria-invalid={restrictionError ? 'true' : undefined}
 			aria-describedby={restrictionError ? `${question.id}-restriction-error` : undefined}
 		/>
@@ -162,6 +165,6 @@
 	{/if}
 
 	{#if question.allowAttachments}
-		<FileLinkUploader questionId={question.id} bind:attachments {disabled} />
+		<FileLinkUploader questionId={question.id} bind:attachments {disabled} {preview} />
 	{/if}
 </div>

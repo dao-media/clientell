@@ -70,3 +70,33 @@ export function formatFileSize(bytes?: number): string {
 export function isImageAttachment(item: AttachmentItem): boolean {
 	return item.kind === 'file' && !!item.mimeType?.startsWith('image/');
 }
+
+export function isVideoFileAttachment(item: AttachmentItem): boolean {
+	return item.kind === 'file' && !!item.mimeType?.startsWith('video/');
+}
+
+export function isVideoUrl(value: string): boolean {
+	try {
+		const url = new URL(value);
+		const host = url.hostname.replace(/^www\./, '');
+		if (['youtube.com', 'youtu.be', 'vimeo.com', 'loom.com'].includes(host)) return true;
+		return /\.(mp4|webm|mov|m4v|ogv)(\?|$)/i.test(url.pathname);
+	} catch {
+		return false;
+	}
+}
+
+export type AttachmentDisplayKind = 'image' | 'video' | 'link' | 'file';
+
+export function attachmentDisplayKind(item: AttachmentItem): AttachmentDisplayKind {
+	if (item.kind === 'link') {
+		return isVideoUrl(item.url) ? 'video' : 'link';
+	}
+	if (isImageAttachment(item)) return 'image';
+	if (isVideoFileAttachment(item)) return 'video';
+	return 'file';
+}
+
+export function isVideoAttachment(item: AttachmentItem): boolean {
+	return attachmentDisplayKind(item) === 'video';
+}

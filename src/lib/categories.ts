@@ -1,3 +1,5 @@
+import { createCategoryId } from '$lib/ids';
+
 export type QuestionCategory = {
 	id: string;
 	name: string;
@@ -16,18 +18,10 @@ export const CATEGORY_COLOR_PRESETS = [
 /** Tab id for the placeholder shown before the first real category exists. */
 export const PLACEHOLDER_CATEGORY_TAB_ID = '__category-placeholder__';
 
-function slugId(value: string): string {
-	return value
-		.toLowerCase()
-		.replace(/[^a-z0-9]+/g, '-')
-		.replace(/^-|-$/g, '')
-		.slice(0, 40);
-}
-
 export function createCategory(name: string, color?: string, index = 0): QuestionCategory {
 	const trimmed = name.trim();
 	return {
-		id: slugId(trimmed) || crypto.randomUUID(),
+		id: createCategoryId(),
 		name: trimmed,
 		color: color ?? CATEGORY_COLOR_PRESETS[index % CATEGORY_COLOR_PRESETS.length]
 	};
@@ -52,7 +46,7 @@ export function normalizeCategoryDefinitions(value: unknown): QuestionCategory[]
 			const raw = item as Partial<QuestionCategory>;
 			const name = String(raw.name ?? '').trim();
 			if (!name) continue;
-			const id = String(raw.id ?? slugId(name) ?? crypto.randomUUID());
+			const id = String(raw.id ?? createCategoryId());
 			if (seen.has(id)) continue;
 			seen.add(id);
 			categories.push({

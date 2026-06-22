@@ -10,8 +10,10 @@ import {
 	questionSets,
 	responses
 } from '$lib/server/db/schema';
-import { validateAnswers } from '$lib/utils';
+import { validateAnswers, validatePartialAnswers } from '$lib/utils';
 import { attachmentAnswerKey, parseAttachmentsField } from '$lib/attachments';
+import { adminSubmissionUrl, getAdminNotificationEmail } from '$lib/server/config';
+import { sendBriefSubmittedNotification } from '$lib/server/email/reminder';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -126,8 +128,11 @@ export const actions: Actions = {
 			.filter(Boolean);
 		const setQuestions = await loadAssignmentQuestions(locals.db, session.assignmentId, questionIds);
 		const answers = parseAnswers(data, questionIds, setQuestions);
+		const partial = data.get('partial') === 'true';
 
-		const validationError = validateAnswers(setQuestions, answers);
+		const validationError = partial
+			? validatePartialAnswers(setQuestions, answers)
+			: validateAnswers(setQuestions, answers);
 		if (validationError) {
 			return fail(400, { error: validationError });
 		}
@@ -164,7 +169,7 @@ export const actions: Actions = {
 		return { saved: true };
 	},
 
-	submit: async ({ request, locals }) => {
+	submit: async ({ request, locals, platform }) => {
 		const session = requireClient(locals);
 		const data = await request.formData();
 		const questionIds = String(data.get('questionIds') ?? '')
@@ -174,10 +179,13 @@ export const actions: Actions = {
 		const [row] = await locals.db
 			.select({
 				assignment: assignments,
+				client: clients,
 				response: responses,
+				questionSet: questionSets,
 				setCategories: questionSets.categories
 			})
 			.from(assignments)
+			.innerJoin(clients, eq(assignments.clientId, clients.id))
 			.innerJoin(responses, eq(responses.assignmentId, assignments.id))
 			.innerJoin(questionSets, eq(assignments.questionSetId, questionSets.id))
 			.where(eq(assignments.id, session.assignmentId))
@@ -204,15 +212,35 @@ export const actions: Actions = {
 			return fail(400, { error: 'This brief has already been submitted.' });
 		}
 
+		const wasDraft = row.response.status !== 'submitted';
+
 		await locals.db
 			.update(responses)
 			.set({
 				answers,
 				status: 'submitted',
-				submittedAt: new Date(),
+				submittedAt: row.response.submittedAt ?? new Date(),
 				updatedAt: new Date()
 			})
 			.where(eq(responses.assignmentId, session.assignmentId));
+
+		if (wasDraft) {
+			const briefTitle =
+				formatCategoryList(
+					parseCategoryIds(row.assignment.categories),
+					normalizeCategoryDefinitions(row.setCategories)
+				) || row.questionSet.title;
+
+			void sendBriefSubmittedNotification(platform, {
+				to: getAdminNotificationEmail(),
+				clientCompany: row.client.company,
+				clientContact: row.client.contactName,
+				briefTitle,
+				submissionUrl: adminSubmissionUrl(session.assignmentId)
+			}).catch((notifyError) => {
+				console.error('[briefly] submission notification failed', notifyError);
+			});
+		}
 
 		return { submitted: true };
 	}

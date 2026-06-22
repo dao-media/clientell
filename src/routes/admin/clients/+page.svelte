@@ -1,30 +1,29 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { enhance } from '$app/forms';
 	import {
-		adminDataKeys,
-		refreshAfterClientChange,
-		refreshOnVisible
-	} from '$lib/admin/refresh-data';
+		normalizeClients,
+		notifyOtherAdminPagesClientChanged,
+		reloadClientsAfterSave
+	} from '$lib/admin/clients-sync';
+	import type { ClientListItem } from '$lib/admin/clients-list';
+	import AddClientModal from '$lib/components/admin/AddClientModal.svelte';
 	import ClientCard from '$lib/components/admin/ClientCard.svelte';
 	import ClientEditorModal from '$lib/components/admin/ClientEditorModal.svelte';
 	import Btn from '$lib/components/Btn.svelte';
 	import Alert from '$lib/components/ui/Alert.svelte';
+	import AdminCardGrid from '$lib/components/layout/AdminCardGrid.svelte';
 	import PageHeader from '$lib/components/layout/PageHeader.svelte';
 	import PageShell from '$lib/components/layout/PageShell.svelte';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	const clients = $derived(data.clients);
-	const serviceOptions = $derived(data.serviceOptions);
-	const clientCount = $derived(clients.length);
-	const clientCountLabel = $derived(
-		clientCount === 1 ? '1 client' : `${clientCount} clients`
-	);
-
-	refreshOnVisible(adminDataKeys.clients, adminDataKeys.dashboard);
-
-	let modalOpen = $state(false);
+	let clients = $state<ClientListItem[]>(normalizeClients(data.clients));
+	let listError = $state('');
+	let refreshSeq = 0;
+	let addModalOpen = $state(false);
+	let addSession = $state(0);
 	let selectMode = $state(false);
 	let selectedClientIds = $state<string[]>([]);
 	let editingClient = $state<{
@@ -35,15 +34,47 @@
 		phone: string;
 		services: string[];
 	} | null>(null);
+	let editModalOpen = $state(false);
 
+	const serviceOptions = $derived(data.serviceOptions);
+	const clientCount = $derived(clients.length);
+	const clientCountLabel = $derived(
+		clientCount === 1 ? '1 client' : `${clientCount} clients`
+	);
 	const selectedCount = $derived(selectedClientIds.length);
+
+	onMount(() => {
+		void refreshClients();
+	});
+
+	function applyClients(
+		rows: Array<Omit<ClientListItem, 'createdAt'> & { createdAt: string | Date }>
+	) {
+		refreshSeq += 1;
+		clients = normalizeClients(rows);
+	}
+
+	async function refreshClients() {
+		const seq = ++refreshSeq;
+		listError = '';
+		try {
+			const fresh = await reloadClientsAfterSave();
+			if (seq !== refreshSeq) return;
+			clients = fresh;
+			notifyOtherAdminPagesClientChanged();
+		} catch (err) {
+			if (seq !== refreshSeq) return;
+			listError = err instanceof Error ? err.message : 'Could not refresh clients.';
+		}
+	}
 
 	function openAddClient() {
 		editingClient = null;
-		modalOpen = true;
+		addSession += 1;
+		addModalOpen = true;
 	}
 
-	function openEditClient(client: (typeof clients)[number]) {
+	function openEditClient(client: ClientListItem) {
 		editingClient = {
 			id: client.id,
 			company: client.company,
@@ -52,7 +83,7 @@
 			phone: client.phone ?? '',
 			services: [...client.services]
 		};
-		modalOpen = true;
+		editModalOpen = true;
 	}
 
 	function toggleSelectMode() {
@@ -70,14 +101,28 @@
 		}
 	}
 
-	function closeModal() {
+	function closeEditModal() {
+		editModalOpen = false;
 		editingClient = null;
 	}
 
-	async function afterClientMutation(resultType: string) {
-		if (resultType === 'success') {
-			await refreshAfterClientChange();
+	async function afterClientMutation(
+		result: import('@sveltejs/kit').ActionResult,
+		update: (options?: { reset?: boolean; invalidateAll?: boolean }) => Promise<void>
+	) {
+		if (result.type === 'success') {
+			if (Array.isArray(result.data?.clients)) {
+				applyClients(
+					result.data.clients as Array<
+						Omit<ClientListItem, 'createdAt'> & { createdAt: string | Date }
+					>
+				);
+			}
+
+			await refreshClients();
 		}
+
+		await update({ reset: false, invalidateAll: false });
 	}
 
 	function confirmBulkDelete(event: SubmitEvent) {
@@ -99,7 +144,7 @@
 		kicker={selectMode && selectedCount > 0
 			? `${selectedCount} selected`
 			: clientCountLabel}
-		lead="Contact email is used for portal login. Track requested services on each client."
+		lead="Contact email is used for portal login (the same email can be used for multiple clients). Track requested services on each client."
 	>
 		{#snippet actions()}
 			{#if selectMode}
@@ -109,12 +154,12 @@
 					class="page-header-actions-form"
 					use:enhance={() => {
 						return async ({ result, update }) => {
-							await update({ reset: false, invalidateAll: false });
-							await afterClientMutation(result.type);
 							if (result.type === 'success') {
 								selectedClientIds = [];
 								selectMode = false;
 							}
+
+							await afterClientMutation(result, update);
 						};
 					}}
 					onsubmit={confirmBulkDelete}
@@ -137,6 +182,10 @@
 		{/snippet}
 	</PageHeader>
 
+	{#if listError}
+		<Alert variant="error" title="Could not refresh clients" subtitle={listError} />
+	{/if}
+
 	{#if form?.success && typeof form.deletedCount === 'number'}
 		<Alert
 			variant="success"
@@ -148,6 +197,10 @@
 		<Alert variant="success" title="Client saved" />
 	{/if}
 
+	{#if form?.clientError}
+		<Alert variant="error" title="Could not save client" subtitle={form.clientError} />
+	{/if}
+
 	{#if form?.bulkDeleteError}
 		<Alert variant="error" title="Could not delete clients" subtitle={form.bulkDeleteError} />
 	{/if}
@@ -156,36 +209,45 @@
 		<Alert variant="error" title="Could not delete client" subtitle={form.deleteError} />
 	{/if}
 
-	{#if clientCount === 0}
-		<div class="card">
-			<p class="empty-state">No clients yet.</p>
-			<Btn onclick={openAddClient}>Add your first client</Btn>
-		</div>
-	{:else}
-		<div class="admin-card-grid">
+	<AdminCardGrid>
+		{#if clientCount === 0}
+			<div class="card empty-panel">
+				<p class="empty-state">No clients yet.</p>
+				<Btn onclick={openAddClient}>Add your first client</Btn>
+			</div>
+		{:else}
 			{#each clients as client (client.id)}
 				<ClientCard
 					{client}
-					{serviceOptions}
 					{selectMode}
 					selected={selectedClientIds.includes(client.id)}
 					ontoggle={toggleClientSelection}
 					onedit={openEditClient}
 				/>
 			{/each}
-		</div>
-	{/if}
+		{/if}
+	</AdminCardGrid>
 </PageShell>
 
-<ClientEditorModal
-	bind:open={modalOpen}
-	client={editingClient}
+<AddClientModal
+	bind:open={addModalOpen}
+	session={addSession}
 	{serviceOptions}
-	error={form?.clientError ?? ''}
-	deleteError={form?.deleteError ?? ''}
-	onclose={closeModal}
-	onsaved={refreshAfterClientChange}
+	onclients={applyClients}
+	onsaved={refreshClients}
 />
+
+{#if editingClient}
+	<ClientEditorModal
+		bind:open={editModalOpen}
+		client={editingClient}
+		{serviceOptions}
+		clientError={form?.clientError ?? ''}
+		deleteError={form?.deleteError ?? ''}
+		onsaved={refreshClients}
+		onclose={closeEditModal}
+	/>
+{/if}
 
 <style>
 	.page-header-actions-form {
@@ -193,6 +255,10 @@
 		flex-wrap: wrap;
 		gap: 0.75rem;
 		align-items: center;
+	}
+
+	.empty-panel {
+		grid-column: 1 / -1;
 	}
 
 	.empty-state {

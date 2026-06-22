@@ -1,5 +1,25 @@
 @import '$lib/styles/radius.css';
 
+/* Client + question archive lists: 1 col mobile, 2 cols (50% max) desktop */
+.admin-two-col-grid {
+	display: grid !important;
+	gap: var(--layout-grid-gap, 1rem);
+	grid-template-columns: minmax(0, 1fr) !important;
+	width: 100%;
+}
+
+.admin-two-col-grid > * {
+	min-width: 0;
+	width: 100%;
+	max-width: 100%;
+}
+
+@media (min-width: 768px) {
+	.admin-two-col-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+	}
+}
+
 .detail-actions {
 	display: flex;
 	flex-wrap: wrap;
@@ -21,11 +41,14 @@
 }
 
 .answer-card p,
-.question-meta,
 .question-help {
 	margin-top: 0.5rem;
 	color: var(--color-muted);
 	font-size: 0.875rem;
+}
+
+.question-meta {
+	margin-top: 0.5rem;
 }
 
 .progress-bar {

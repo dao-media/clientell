@@ -10,7 +10,7 @@
 </script>
 
 <PageShell width="form">
-	<PageHeader title="Add client" lead="The contact email is used for portal sign-in." />
+	<PageHeader title="Add client" lead="The contact email is used for portal sign-in. The same email can be used for multiple clients." />
 
 	<div class="card">
 		<form method="POST" class="form-group">

@@ -47,7 +47,7 @@
 
 	const titles: Record<typeof view, string> = {
 		all: 'All submissions',
-		unfinished: 'Unfinished submissions',
+		unfinished: 'Pending submissions',
 		completed: 'Completed submissions'
 	};
 
@@ -90,7 +90,7 @@
 
 	function statusLabel(status: SubmissionListItem['status']): string {
 		if (status === 'submitted') return 'Completed';
-		if (status === 'draft') return 'Unfinished';
+		if (status === 'draft') return 'Pending';
 		return 'Not started';
 	}
 
