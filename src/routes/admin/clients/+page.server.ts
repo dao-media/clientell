@@ -13,7 +13,10 @@ import { formatUsPhoneInput } from '$lib/phone';
 import { normalizeEmail } from '$lib/utils';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ locals, depends, url }) => {
+export const load: PageServerLoad = async ({ locals, depends, url, setHeaders }) => {
+	setHeaders({
+		'cache-control': 'private, no-cache, no-store, must-revalidate'
+	});
 	registerPageDataDepends(depends, url.pathname, 'briefly:clients', 'briefly:dashboard');
 	return loadClientsPageData(locals.db);
 };

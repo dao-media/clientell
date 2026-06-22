@@ -6,7 +6,7 @@
 	import Field from '$lib/components/ui/Field.svelte';
 	import Modal from '$lib/components/ui/Modal.svelte';
 	import Spinner from '$lib/components/ui/Spinner.svelte';
-	import type { ClientListItem } from '$lib/admin/clients-list';
+	import { clientsFromActionData, type ClientListRow } from '$lib/admin/clients-sync';
 	import type { QuestionCategory } from '$lib/categories';
 
 	let {
@@ -20,10 +20,8 @@
 		open?: boolean;
 		session?: number;
 		serviceOptions?: QuestionCategory[];
-		onclients?: (
-			clients: Array<Omit<ClientListItem, 'createdAt'> & { createdAt: string | Date }>
-		) => void;
-		onsaved?: () => void | Promise<void>;
+		onclients?: (clients: ClientListRow[]) => void;
+		onsaved?: (result: import('@sveltejs/kit').ActionResult) => void | Promise<void>;
 		onclose?: () => void;
 	} = $props();
 
@@ -71,15 +69,17 @@
 					return async ({ result, update }) => {
 						try {
 							if (result.type === 'success') {
-								if (Array.isArray(result.data?.clients)) {
+								const savedClients = clientsFromActionData(result.data);
+								if (savedClients) {
 									onclients?.(
-										result.data.clients as Array<
-											Omit<ClientListItem, 'createdAt'> & { createdAt: string | Date }
-										>
+										savedClients.map((client) => ({
+											...client,
+											createdAt: client.createdAt.toISOString()
+										}))
 									);
 								}
 
-								await onsaved?.();
+								await onsaved?.(result);
 								await update({ reset: false, invalidateAll: false });
 								handleClose();
 								return;

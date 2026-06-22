@@ -44,7 +44,7 @@
 		serviceOptions?: QuestionCategory[];
 		clientError?: string;
 		deleteError?: string;
-		onsaved?: () => void | Promise<void>;
+		onsaved?: (result: import('@sveltejs/kit').ActionResult) => void | Promise<void>;
 		onclose?: () => void;
 	} = $props();
 
@@ -110,7 +110,7 @@
 
 	async function notifySaved(result: import('@sveltejs/kit').ActionResult) {
 		if (result.type === 'success') {
-			await onsaved?.();
+			await onsaved?.(result);
 			return true;
 		}
 
@@ -184,7 +184,7 @@
 
 		if (result.type === 'success') {
 			saveError = '';
-			await onsaved?.();
+			await onsaved?.(result);
 			return true;
 		}
 

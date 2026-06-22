@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { enhance } from '$app/forms';
 	import {
+		clientsFromActionData,
 		normalizeClients,
-		notifyOtherAdminPagesClientChanged,
-		reloadClientsAfterSave
+		reloadClientsPageData,
+		type ClientListRow
 	} from '$lib/admin/clients-sync';
 	import type { ClientListItem } from '$lib/admin/clients-list';
 	import AddClientModal from '$lib/components/admin/AddClientModal.svelte';
@@ -19,9 +19,7 @@
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	let clients = $state<ClientListItem[]>(normalizeClients(data.clients));
-	let listError = $state('');
-	let refreshSeq = 0;
+	let clientsOverride = $state<ClientListItem[] | null>(null);
 	let addModalOpen = $state(false);
 	let addSession = $state(0);
 	let selectMode = $state(false);
@@ -37,35 +35,25 @@
 	let editModalOpen = $state(false);
 
 	const serviceOptions = $derived(data.serviceOptions);
+	const clients = $derived(clientsOverride ?? normalizeClients(data.clients));
 	const clientCount = $derived(clients.length);
 	const clientCountLabel = $derived(
 		clientCount === 1 ? '1 client' : `${clientCount} clients`
 	);
 	const selectedCount = $derived(selectedClientIds.length);
 
-	onMount(() => {
-		void refreshClients();
-	});
-
-	function applyClients(
-		rows: Array<Omit<ClientListItem, 'createdAt'> & { createdAt: string | Date }>
-	) {
-		refreshSeq += 1;
-		clients = normalizeClients(rows);
+	function applyClients(rows: ClientListRow[]) {
+		clientsOverride = normalizeClients(rows);
 	}
 
-	async function refreshClients() {
-		const seq = ++refreshSeq;
-		listError = '';
-		try {
-			const fresh = await reloadClientsAfterSave();
-			if (seq !== refreshSeq) return;
-			clients = fresh;
-			notifyOtherAdminPagesClientChanged();
-		} catch (err) {
-			if (seq !== refreshSeq) return;
-			listError = err instanceof Error ? err.message : 'Could not refresh clients.';
+	async function afterClientSaved(result: import('@sveltejs/kit').ActionResult) {
+		const fromAction = result.type === 'success' ? clientsFromActionData(result.data) : null;
+		if (fromAction) {
+			clientsOverride = fromAction;
 		}
+
+		await reloadClientsPageData();
+		clientsOverride = null;
 	}
 
 	function openAddClient() {
@@ -111,15 +99,7 @@
 		update: (options?: { reset?: boolean; invalidateAll?: boolean }) => Promise<void>
 	) {
 		if (result.type === 'success') {
-			if (Array.isArray(result.data?.clients)) {
-				applyClients(
-					result.data.clients as Array<
-						Omit<ClientListItem, 'createdAt'> & { createdAt: string | Date }
-					>
-				);
-			}
-
-			await refreshClients();
+			await afterClientSaved(result);
 		}
 
 		await update({ reset: false, invalidateAll: false });
@@ -182,10 +162,6 @@
 		{/snippet}
 	</PageHeader>
 
-	{#if listError}
-		<Alert variant="error" title="Could not refresh clients" subtitle={listError} />
-	{/if}
-
 	{#if form?.success && typeof form.deletedCount === 'number'}
 		<Alert
 			variant="success"
@@ -234,7 +210,7 @@
 	session={addSession}
 	{serviceOptions}
 	onclients={applyClients}
-	onsaved={refreshClients}
+	onsaved={afterClientSaved}
 />
 
 {#if editingClient}
@@ -244,7 +220,7 @@
 		{serviceOptions}
 		clientError={form?.clientError ?? ''}
 		deleteError={form?.deleteError ?? ''}
-		onsaved={refreshClients}
+		onsaved={afterClientSaved}
 		onclose={closeEditModal}
 	/>
 {/if}

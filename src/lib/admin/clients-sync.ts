@@ -1,9 +1,10 @@
-import { fetchClientsList, type ClientListItem } from '$lib/admin/clients-list';
-import { refreshAfterClientChange } from '$lib/admin/refresh-data';
+import { invalidate } from '$app/navigation';
+import { adminDataKeys } from '$lib/admin/refresh-data';
+import type { ClientListItem } from '$lib/admin/clients-list';
 
-function normalizeClients(
-	rows: Array<Omit<ClientListItem, 'createdAt'> & { createdAt: string | Date }>
-): ClientListItem[] {
+export type ClientListRow = Omit<ClientListItem, 'createdAt'> & { createdAt: string | Date };
+
+export function normalizeClients(rows: ClientListRow[]): ClientListItem[] {
 	return rows.map((client) => ({
 		...client,
 		createdAt:
@@ -11,14 +12,18 @@ function normalizeClients(
 	}));
 }
 
-/** Load the authoritative client list from the database. */
-export async function reloadClientsAfterSave(): Promise<ClientListItem[]> {
-	return normalizeClients(await fetchClientsList());
+export function clientsFromActionData(data: unknown): ClientListItem[] | null {
+	if (!data || typeof data !== 'object' || !('clients' in data)) return null;
+	const rows = (data as { clients?: unknown }).clients;
+	return Array.isArray(rows) ? normalizeClients(rows as ClientListRow[]) : null;
 }
 
-/** Refresh other admin views that depend on the client list. */
-export function notifyOtherAdminPagesClientChanged() {
-	void refreshAfterClientChange();
+/** Reload server data for the clients page and related admin views. */
+export async function reloadClientsPageData() {
+	await Promise.all([
+		invalidate(adminDataKeys.clients),
+		invalidate(adminDataKeys.dashboard),
+		invalidate('/admin/clients'),
+		invalidate('/admin/briefs/new')
+	]);
 }
-
-export { normalizeClients };
