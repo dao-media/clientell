@@ -4,6 +4,7 @@
 	import Chip from '$lib/components/ui/Chip.svelte';
 	import AttachmentPill from '$lib/components/AttachmentPill.svelte';
 	import ClientEditorModal from '$lib/components/admin/ClientEditorModal.svelte';
+	import CancelBriefButton from '$lib/components/admin/CancelBriefButton.svelte';
 	import PageHeader from '$lib/components/layout/PageHeader.svelte';
 	import PageShell from '$lib/components/layout/PageShell.svelte';
 	import { attachmentAnswerKey, parseAttachments } from '$lib/attachments';
@@ -89,6 +90,11 @@
 				<Btn variant="ghost" type="submit">Reopen for edits</Btn>
 			</form>
 		{/if}
+		<CancelBriefButton
+			actionBase="/admin/submissions/{data.assignment.id}"
+			hasClientContent={data.hasClientContent}
+			briefTitle={briefTitle}
+		/>
 	</div>
 
 	<div class="bento-grid bento-grid--detail">

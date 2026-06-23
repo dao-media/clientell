@@ -241,3 +241,15 @@ export async function listClientsForFilter(db: Database) {
 		.from(clients)
 		.orderBy(asc(clients.company));
 }
+
+export function submissionHasClientContent(
+	response: { status: ResponseStatus } | null | undefined,
+	progress: number
+): boolean {
+	if (response?.status === 'submitted') return true;
+	return progress > 0;
+}
+
+export async function deleteAssignment(db: Database, assignmentId: string) {
+	await db.delete(assignments).where(eq(assignments.id, assignmentId));
+}

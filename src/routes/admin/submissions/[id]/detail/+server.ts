@@ -1,5 +1,5 @@
 import { error, json } from '@sveltejs/kit';
-import { getSubmissionDetail } from '$lib/server/submissions';
+import { getSubmissionDetail, submissionHasClientContent } from '$lib/server/submissions';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ locals, params }) => {
@@ -13,6 +13,7 @@ export const GET: RequestHandler = async ({ locals, params }) => {
 			sentAt: detail.assignment.sentAt?.toISOString() ?? null,
 			canSendBrief: !detail.assignment.sentAt && Boolean(detail.assignment.invitationPin),
 			canResendBrief: Boolean(detail.assignment.sentAt),
+			hasClientContent: submissionHasClientContent(detail.response, detail.progress),
 			createdAt: detail.assignment.createdAt.toISOString()
 		},
 		client: {

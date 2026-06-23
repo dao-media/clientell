@@ -5,6 +5,7 @@
 	import Btn from '$lib/components/Btn.svelte';
 	import Chip from '$lib/components/ui/Chip.svelte';
 	import Alert from '$lib/components/ui/Alert.svelte';
+	import CancelBriefButton from '$lib/components/admin/CancelBriefButton.svelte';
 	import type { SubmissionDetail } from '$lib/admin/submission-detail';
 	import { attachmentAnswerKey, parseAttachments } from '$lib/attachments';
 	import { formatCategoryList } from '$lib/categories';
@@ -47,6 +48,11 @@
 	);
 	const actionBase = $derived(detail ? `/admin/submissions/${detail.assignment.id}` : '');
 	const companyLabel = $derived(clientCompany || detail?.client.company || '');
+	const briefTitle = $derived(
+		detail
+			? formatCategoryList(detail.briefCategories, detail.setCategories) || detail.questionSet.title
+			: ''
+	);
 
 	$effect(() => {
 		detail;
@@ -66,6 +72,9 @@
 			}
 			if (data.success) {
 				return { variant: 'success', title: 'Submission updated' } as const;
+			}
+			if (data.cancelled) {
+				return { variant: 'success', title: 'Brief cancelled' } as const;
 			}
 			return null;
 		}
@@ -219,6 +228,18 @@
 					<Btn type="submit" variant="ghost" icon={CircleX}>Close submission</Btn>
 				</form>
 			{/if}
+
+			<CancelBriefButton
+				{actionBase}
+				hasClientContent={detail.assignment.hasClientContent}
+				{briefTitle}
+				stayInPlace={Boolean(onDismiss)}
+				onComplete={async () => {
+					actionMessage = { variant: 'success', title: 'Brief cancelled' };
+					await onActionComplete?.();
+					onDismiss?.();
+				}}
+			/>
 
 			{#if onDismiss}
 				<Btn variant="ghost" type="button" onclick={onDismiss}>Dismiss</Btn>

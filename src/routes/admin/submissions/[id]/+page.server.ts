@@ -1,11 +1,11 @@
-import { error, fail } from '@sveltejs/kit';
+import { error, fail, redirect } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 import { resetClientPortalPin } from '$lib/server/auth/reset-client-pin';
 import { getPortalUrl } from '$lib/server/config';
 import { sendBriefAccessHelpEmail, sendBriefReminder, sendBriefReadyEmail, sendPortalLinkEmail } from '$lib/server/email/reminder';
-import { getSubmissionDetail } from '$lib/server/submissions';
+import { deleteAssignment, getSubmissionDetail, submissionHasClientContent } from '$lib/server/submissions';
 import { assignments, questionSets, responses } from '$lib/server/db/schema';
-	import { formatCategoryList, mergeCategoryDefinitions, normalizeClientServiceIds } from '$lib/categories';
+import { formatCategoryList, mergeCategoryDefinitions, normalizeClientServiceIds } from '$lib/categories';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, params, platform }) => {
@@ -32,7 +32,8 @@ export const load: PageServerLoad = async ({ locals, params, platform }) => {
 		portalUrl: getPortalUrl(platform),
 		serviceOptions,
 		canSendBrief: !detail.assignment.sentAt && Boolean(detail.assignment.invitationPin),
-		canResendBrief: Boolean(detail.assignment.sentAt)
+		canResendBrief: Boolean(detail.assignment.sentAt),
+		hasClientContent: submissionHasClientContent(detail.response, detail.progress)
 	};
 };
 
@@ -146,5 +147,24 @@ export const actions: Actions = {
 			.where(eq(responses.assignmentId, params.id));
 
 		return { success: true };
+	},
+
+	cancelBrief: async ({ request, locals, params }) => {
+		const detail = await getSubmissionDetail(locals.db, params.id);
+		if (!detail) return fail(404, { error: 'Submission not found.' });
+
+		const data = await request.formData();
+		const stayInPlace = data.get('stayInPlace') === 'true';
+		const returnTo = String(data.get('returnTo') ?? '').trim();
+		const safeReturn =
+			returnTo.startsWith('/admin/') && !returnTo.includes('://') ? returnTo : '/admin/submissions';
+
+		await deleteAssignment(locals.db, params.id);
+
+		if (stayInPlace) {
+			return { cancelled: true };
+		}
+
+		redirect(303, safeReturn);
 	}
 };

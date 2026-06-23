@@ -5,6 +5,7 @@ export type SubmissionDetail = {
 		sentAt: string | null;
 		canSendBrief: boolean;
 		canResendBrief: boolean;
+		hasClientContent: boolean;
 		createdAt: string;
 	};
 	client: {
