@@ -30,7 +30,7 @@ export const load: PageServerLoad = async ({ locals, depends, url }) => {
 };
 
 export const actions: Actions = {
-	default: async ({ request, locals }) => {
+	default: async ({ request, locals, platform }) => {
 		const data = await request.formData();
 		const clientId = String(data.get('clientId') ?? '');
 		const allowEditsAfterSubmit = data.get('allowEditsAfterSubmit') === 'on';
@@ -86,7 +86,7 @@ export const actions: Actions = {
 			pin,
 			clientEmail: client.email,
 			briefCategories: categoriesLabel,
-			portalUrl: getPortalUrl()
+			portalUrl: getPortalUrl(platform)
 		};
 	}
 };

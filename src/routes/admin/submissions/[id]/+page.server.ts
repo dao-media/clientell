@@ -8,7 +8,7 @@ import { assignments, responses } from '$lib/server/db/schema';
 import { formatCategoryList } from '$lib/categories';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ locals, params }) => {
+export const load: PageServerLoad = async ({ locals, params, platform }) => {
 	const detail = await getSubmissionDetail(locals.db, params.id);
 	if (!detail) error(404, 'Submission not found');
 
@@ -21,7 +21,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 		briefCategories: detail.briefCategories,
 		setCategories: detail.setCategories,
 		progress: detail.progress,
-		portalUrl: getPortalUrl(),
+		portalUrl: getPortalUrl(platform),
 		canSendBrief: !detail.assignment.sentAt && Boolean(detail.assignment.invitationPin)
 	};
 };

@@ -236,7 +236,7 @@ export const actions: Actions = {
 				clientCompany: row.client.company,
 				clientContact: row.client.contactName,
 				briefTitle,
-				submissionUrl: adminSubmissionUrl(session.assignmentId)
+				submissionUrl: adminSubmissionUrl(session.assignmentId, platform)
 			}).catch((notifyError) => {
 				console.error('[briefly] submission notification failed', notifyError);
 			});

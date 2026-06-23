@@ -19,7 +19,7 @@ export async function sendBriefReminder(
 		progress: number;
 	}
 ): Promise<ReminderResult> {
-	const portalUrl = getPortalUrl();
+	const portalUrl = getPortalUrl(platform);
 	const subject = `Reminder: complete your brief — ${params.briefTitle}`;
 	const text = [
 		`Hi ${params.contactName},`,
@@ -52,7 +52,7 @@ export async function sendBriefReadyEmail(
 		categoriesLabel?: string;
 	}
 ): Promise<ReminderResult> {
-	const portalUrl = getPortalUrl();
+	const portalUrl = getPortalUrl(platform);
 	const subject = 'Your information gathering link is ready';
 	const categoriesLine = params.categoriesLabel
 		? [`Categories: ${params.categoriesLabel}`, '']
@@ -106,7 +106,7 @@ export async function sendPortalLinkEmail(
 		briefTitle: string;
 	}
 ): Promise<ReminderResult> {
-	const portalUrl = getPortalUrl();
+	const portalUrl = getPortalUrl(platform);
 	const subject = `Your Briefly portal link — ${params.briefTitle}`;
 	const text = [
 		`Hi ${params.contactName},`,
@@ -138,7 +138,7 @@ export async function sendForgotPinEmail(
 		pin: string;
 	}
 ): Promise<ReminderResult> {
-	const portalUrl = getPortalUrl();
+	const portalUrl = getPortalUrl(platform);
 	const subject = 'Your new Briefly sign-in PIN';
 	const text = [
 		`Hi ${params.contactName},`,

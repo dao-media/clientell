@@ -29,8 +29,8 @@ export function buildUploadKey(scope: string, filename: string): string {
 	return `${scope}/${crypto.randomUUID()}-${sanitizeFilename(filename)}`;
 }
 
-export function buildPublicFileUrl(key: string): string {
-	return `${getPublicOrigin()}/api/files/${key.split('/').map(encodeURIComponent).join('/')}`;
+export function buildPublicFileUrl(key: string, platform?: App.Platform): string {
+	return `${getPublicOrigin(platform)}/api/files/${key.split('/').map(encodeURIComponent).join('/')}`;
 }
 
 export async function storeUploadedFile(
@@ -51,7 +51,7 @@ export async function storeUploadedFile(
 
 	return {
 		key,
-		url: buildPublicFileUrl(key),
+		url: buildPublicFileUrl(key, platform),
 		name: file.name || 'Uploaded file',
 		mimeType: file.type || 'application/octet-stream',
 		size: file.size

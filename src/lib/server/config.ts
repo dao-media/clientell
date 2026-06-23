@@ -1,25 +1,53 @@
+import { dev } from '$app/environment';
 import { env } from '$env/dynamic/private';
 
 /** Production hostname for Briefly */
 export const PRODUCTION_ORIGIN = 'https://briefly.daneoleary.com';
 
-export function getPublicOrigin(): string {
-	const configured = env.PUBLIC_ORIGIN as string | undefined;
-	if (configured) {
-		return configured.replace(/\/$/, '');
-	}
+const LOCAL_ORIGIN = 'https://localhost:5173';
 
-	return env.NODE_ENV === 'production' ? PRODUCTION_ORIGIN : 'https://localhost:5173';
+function isLocalHostOrigin(origin: string): boolean {
+	try {
+		const host = new URL(origin).hostname;
+		return host === 'localhost' || host === '127.0.0.1';
+	} catch {
+		return false;
+	}
 }
 
-export function getPortalUrl(): string {
-	return `${getPublicOrigin()}/portal`;
+function isCloudflarePages(platform?: App.Platform): boolean {
+	return (
+		(platform?.env as { CF_PAGES?: string } | undefined)?.CF_PAGES === '1' || env.CF_PAGES === '1'
+	);
+}
+
+export function getPublicOrigin(platform?: App.Platform): string {
+	const configured =
+		(platform?.env as { PUBLIC_ORIGIN?: string } | undefined)?.PUBLIC_ORIGIN ?? env.PUBLIC_ORIGIN;
+
+	if (configured) {
+		const origin = configured.replace(/\/$/, '');
+		if (isCloudflarePages(platform) && isLocalHostOrigin(origin)) {
+			return PRODUCTION_ORIGIN;
+		}
+		return origin;
+	}
+
+	if (isCloudflarePages(platform)) {
+		return PRODUCTION_ORIGIN;
+	}
+
+	return dev ? LOCAL_ORIGIN : PRODUCTION_ORIGIN;
+}
+
+export function getPortalUrl(platform?: App.Platform): string {
+	return `${getPublicOrigin(platform)}/portal`;
 }
 
 export function getAdminNotificationEmail(): string {
 	return (env.ADMIN_NOTIFICATION_EMAIL ?? env.EMAIL_FROM ?? 'briefly@daneoleary.com').trim();
 }
 
-export function adminSubmissionUrl(assignmentId: string): string {
-	return `${getPublicOrigin()}/admin/submissions/${assignmentId}`;
+export function adminSubmissionUrl(assignmentId: string, platform?: App.Platform): string {
+	return `${getPublicOrigin(platform)}/admin/submissions/${assignmentId}`;
 }
