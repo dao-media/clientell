@@ -10,7 +10,10 @@
 </script>
 
 <PageShell width="form">
-	<PageHeader title="Add client" lead="The contact email is used for portal sign-in. The same email can be used for multiple clients." />
+	<PageHeader
+		title="Add client"
+		lead="The contact email is used for portal sign-in. Each email can only belong to one client."
+	/>
 
 	<div class="card">
 		<form method="POST" class="form-group">
@@ -23,7 +26,17 @@
 			</fieldset>
 
 			{#if form?.error}
-				<Alert variant="error" title="Could not save client" subtitle={form.error} />
+				<Alert
+					variant="error"
+					title={'emailTaken' in form && form.emailTaken ? 'Email already in use' : 'Could not save client'}
+					subtitle={form.error}
+				/>
+				{#if 'emailTaken' in form && form.emailTaken}
+					<p class="email-taken-actions">
+						<Btn variant="secondary" href="/portal">Sign in to portal</Btn>
+						<Btn variant="ghost" href="/portal/forgot-pin">Forgot PIN</Btn>
+					</p>
+				{/if}
 			{/if}
 
 			<div class="form-actions">
@@ -39,5 +52,12 @@
 		border: 0;
 		padding: 0;
 		margin: 0;
+	}
+
+	.email-taken-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+		margin: 0 0 1rem;
 	}
 </style>

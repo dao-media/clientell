@@ -1,5 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { createClientId } from '$lib/ids';
+import { CLIENT_EMAIL_TAKEN_MESSAGE, isClientEmailTaken } from '$lib/server/clients-email';
 import { clients } from '$lib/server/db/schema';
 import { formatUsPhoneInput } from '$lib/phone';
 import { normalizeEmail } from '$lib/utils';
@@ -16,6 +17,14 @@ export const actions: Actions = {
 
 		if (!company || !contactName || !email) {
 			return fail(400, { error: 'Company, point of contact, and email are required.' });
+		}
+
+		if (await isClientEmailTaken(locals.db, email)) {
+			return fail(409, {
+				error: CLIENT_EMAIL_TAKEN_MESSAGE,
+				emailTaken: true,
+				email
+			});
 		}
 
 		await locals.db.insert(clients).values({

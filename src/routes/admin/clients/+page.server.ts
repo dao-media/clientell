@@ -6,6 +6,7 @@ import {
 	parseCategoriesFromFormData
 } from '$lib/categories';
 import { createClientId } from '$lib/ids';
+import { CLIENT_EMAIL_TAKEN_MESSAGE, isClientEmailTaken } from '$lib/server/clients-email';
 import { registerPageDataDepends } from '$lib/admin/refresh-data';
 import { loadClientsPageData } from '$lib/server/clients-page';
 import { clients, questionSets } from '$lib/server/db/schema';
@@ -47,6 +48,14 @@ export const actions: Actions = {
 		const setRows = await locals.db.select({ categories: questionSets.categories }).from(questionSets);
 		const serviceOptions = mergeCategoryDefinitions(setRows.map((set) => set.categories));
 		const services = normalizeClientServiceIds(selectedServices, serviceOptions);
+
+		if (await isClientEmailTaken(locals.db, email, clientId || undefined)) {
+			return fail(409, {
+				clientError: CLIENT_EMAIL_TAKEN_MESSAGE,
+				emailTaken: true,
+				email
+			});
+		}
 
 		if (clientId) {
 			await locals.db

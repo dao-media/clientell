@@ -124,7 +124,7 @@
 		kicker={selectMode && selectedCount > 0
 			? `${selectedCount} selected`
 			: clientCountLabel}
-		lead="Contact email is used for portal login (the same email can be used for multiple clients). Track requested services on each client."
+		lead="Each client has one portal email. Clients sign in with that email and their PIN. Track requested services on each client."
 	>
 		{#snippet actions()}
 			{#if selectMode}
@@ -174,7 +174,17 @@
 	{/if}
 
 	{#if form?.clientError}
-		<Alert variant="error" title="Could not save client" subtitle={form.clientError} />
+		<Alert
+			variant="error"
+			title={'emailTaken' in form && form.emailTaken ? 'Email already in use' : 'Could not save client'}
+			subtitle={form.clientError}
+		/>
+		{#if 'emailTaken' in form && form.emailTaken}
+			<p class="email-taken-actions">
+				<Btn variant="secondary" href="/portal">Sign in to portal</Btn>
+				<Btn variant="ghost" href="/portal/forgot-pin">Forgot PIN</Btn>
+			</p>
+		{/if}
 	{/if}
 
 	{#if form?.bulkDeleteError}
@@ -240,5 +250,12 @@
 	.empty-state {
 		margin-bottom: 1rem;
 		color: var(--color-muted);
+	}
+
+	.email-taken-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+		margin: 0 0 1rem;
 	}
 </style>

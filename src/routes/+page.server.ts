@@ -42,8 +42,10 @@ export const actions: Actions = {
 		}
 
 		const result = await clientPortalLoginFromForm(locals.db, cookies, url, data, request);
-		if (result && 'error' in result && result.error) {
-			return fail(400, { portalError: result.error });
+		if (result) {
+			const portalError =
+				typeof result.data?.error === 'string' ? result.data.error : 'Invalid email or PIN.';
+			return fail(result.status, { portalError });
 		}
 	}
 };

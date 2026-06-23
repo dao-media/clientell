@@ -32,6 +32,7 @@
 	let selectedServices = $state<string[]>([]);
 	let saving = $state(false);
 	let error = $state('');
+	let emailTaken = $state(false);
 	let wasOpen = $state(false);
 
 	$effect(() => {
@@ -46,6 +47,7 @@
 		phone = '';
 		selectedServices = [];
 		error = '';
+		emailTaken = false;
 		saving = false;
 	});
 
@@ -65,6 +67,7 @@
 				use:enhance={() => {
 					saving = true;
 					error = '';
+					emailTaken = false;
 
 					return async ({ result, update }) => {
 						try {
@@ -86,10 +89,12 @@
 							}
 
 							if (result.type === 'failure') {
+								const data = result.data ?? {};
 								error =
-									typeof result.data?.clientError === 'string'
-										? result.data.clientError
+									typeof data.clientError === 'string'
+										? data.clientError
 										: 'Could not save client.';
+								emailTaken = Boolean(data.emailTaken);
 							} else if (result.type === 'error') {
 								error = 'Could not save client.';
 							}
@@ -131,7 +136,17 @@
 				<p class="services-help">Track the services this client has requested so far.</p>
 
 				{#if error}
-					<Alert variant="error" title="Could not save client" subtitle={error} />
+					<Alert
+						variant="error"
+						title={emailTaken ? 'Email already in use' : 'Could not save client'}
+						subtitle={error}
+					/>
+					{#if emailTaken}
+						<div class="email-taken-actions">
+							<Btn variant="secondary" href="/portal">Sign in to portal</Btn>
+							<Btn variant="ghost" href="/portal/forgot-pin">Forgot PIN</Btn>
+						</div>
+					{/if}
 				{/if}
 
 				<div class="modal-actions">
@@ -174,5 +189,11 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 0.5rem;
+	}
+
+	.email-taken-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
 	}
 </style>

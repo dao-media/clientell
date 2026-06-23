@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Btn from '$lib/components/Btn.svelte';
+	import ForgotPinLink from '$lib/components/auth/ForgotPinLink.svelte';
 	import LoginDurationSelect from '$lib/components/auth/LoginDurationSelect.svelte';
 	import LogIn from '@lucide/svelte/icons/log-in';
 	import PageShell from '$lib/components/layout/PageShell.svelte';
@@ -42,6 +43,10 @@
 				<p class="form-error">{form.error}</p>
 			{/if}
 
+			<p class="auth-helper">
+				<ForgotPinLink />
+			</p>
+
 			<LoginDurationSelect id="portal-login-duration" />
 
 			<div class="form-actions">
@@ -65,5 +70,9 @@
 		margin: 0.5rem 0 1.25rem;
 		color: var(--color-muted);
 		font-size: 0.875rem;
+	}
+
+	.auth-helper {
+		margin: 0;
 	}
 </style>

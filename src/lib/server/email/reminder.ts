@@ -129,6 +129,53 @@ export async function sendPortalLinkEmail(
 	return sendEmail(platform, { to: params.to, subject, html, text });
 }
 
+export async function sendForgotPinEmail(
+	platform: App.Platform | undefined,
+	params: {
+		to: string;
+		contactName: string;
+		loginEmail: string;
+		pin: string;
+	}
+): Promise<ReminderResult> {
+	const portalUrl = getPortalUrl();
+	const subject = 'Your new Briefly sign-in PIN';
+	const text = [
+		`Hi ${params.contactName},`,
+		'',
+		'We received a request to reset your portal PIN.',
+		'',
+		`Portal: ${portalUrl}`,
+		'',
+		'Sign in with:',
+		`Email: ${params.loginEmail}`,
+		`Temporary PIN: ${params.pin}`,
+		'',
+		'This is a one-time PIN. The first time you sign in, you will choose your own 6-digit PIN.',
+		'Please save your new PIN after that — you will need it each time you access the questionnaire.',
+		'',
+		'If you did not request this, contact your project manager.',
+		'',
+		'— Briefly'
+	].join('\n');
+	const html = `
+		<p>Hi ${params.contactName},</p>
+		<p>We received a request to reset your portal PIN.</p>
+		<p><a href="${portalUrl}">${portalUrl}</a></p>
+		<p><strong>Sign in with:</strong></p>
+		<ul>
+			<li>Email: <strong>${params.loginEmail}</strong></li>
+			<li>Temporary PIN: <strong>${params.pin}</strong></li>
+		</ul>
+		<p><em>This PIN is one-time. You will set your own PIN on first sign-in.</em></p>
+		<p>Please save your new PIN after that — you will need it each time you access the questionnaire.</p>
+		<p>If you did not request this, contact your project manager.</p>
+		<p>— Briefly</p>
+	`;
+
+	return sendEmail(platform, { to: params.to, subject, html, text });
+}
+
 export async function sendBriefSubmittedNotification(
 	platform: App.Platform | undefined,
 	params: {

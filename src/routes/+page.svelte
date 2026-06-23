@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Btn from '$lib/components/Btn.svelte';
+	import ForgotPinLink from '$lib/components/auth/ForgotPinLink.svelte';
 	import LoginDurationSelect from '$lib/components/auth/LoginDurationSelect.svelte';
 	import Field from '$lib/components/ui/Field.svelte';
 	import PageHeader from '$lib/components/layout/PageHeader.svelte';
@@ -151,6 +152,10 @@
 							<p class="form-error">{form.portalError}</p>
 						{/if}
 
+						<p class="auth-helper">
+							<ForgotPinLink />
+						</p>
+
 						<LoginDurationSelect id="home-portal-login-duration" />
 
 						<div class="form-actions">
@@ -252,6 +257,10 @@
 
 	.home-login-form {
 		margin-top: 0.75rem;
+	}
+
+	.auth-helper {
+		margin: 0;
 	}
 
 	@keyframes home-panel-in {
