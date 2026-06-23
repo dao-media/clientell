@@ -266,7 +266,11 @@
 
 	.uploader.uploader-split {
 		margin-top: 0;
-		height: 100%;
+		display: flex;
+		flex-direction: column;
+		align-self: stretch;
+		min-height: 100%;
+		height: auto;
 	}
 
 	.media-bin {
@@ -281,12 +285,12 @@
 	}
 
 	.uploader-split .media-bin {
-		flex: 1;
 		width: 100%;
 		max-width: none;
 		aspect-ratio: unset;
 		min-height: 8rem;
-		height: 100%;
+		height: auto;
+		flex: 1 1 auto;
 	}
 
 	.media-bin.dragging {
@@ -382,6 +386,19 @@
 		justify-content: center;
 		padding: 0.75rem;
 		overflow: auto;
+	}
+
+	.uploader-split .media-body {
+		flex: 0 0 auto;
+		min-height: 4.5rem;
+		overflow: visible;
+		align-items: flex-start;
+		justify-content: flex-start;
+	}
+
+	.uploader-split .media-body:has(.bin-empty) {
+		align-items: center;
+		justify-content: center;
 	}
 
 	.preview-grid {

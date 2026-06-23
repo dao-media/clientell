@@ -4,7 +4,7 @@ import { listSubmissions, type SubmissionStatusFilter } from '$lib/server/submis
 import type { RequestHandler } from './$types';
 
 function viewToStatus(view: string | null): SubmissionStatusFilter {
-	if (view === 'unfinished') return 'draft';
+	if (view === 'unfinished') return 'pending';
 	if (view === 'completed') return 'submitted';
 	return 'all';
 }

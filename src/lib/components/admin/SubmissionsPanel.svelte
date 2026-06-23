@@ -8,6 +8,12 @@
 	import PageHeader from '$lib/components/layout/PageHeader.svelte';
 	import PageShell from '$lib/components/layout/PageShell.svelte';
 	import FileText from '@lucide/svelte/icons/file-text';
+	import {
+		SUBMISSION_STATUS_FILTERS,
+		submissionsHrefForView,
+		submissionsPageTitle,
+		type SubmissionsView
+	} from '$lib/admin/submission-filters';
 	import type { SubmissionListItem } from '$lib/server/submissions';
 
 	type Filters = {
@@ -26,7 +32,7 @@
 		submissions: SubmissionListItem[];
 		clients: Array<{ id: string; company: string }>;
 		filters: Filters;
-		view: 'all' | 'unfinished' | 'completed';
+		view: SubmissionsView;
 	} = $props();
 
 	let search = $state('');
@@ -45,28 +51,23 @@
 
 	const clientItems = $derived(clients);
 
-	const titles: Record<typeof view, string> = {
-		all: 'All submissions',
-		unfinished: 'Pending submissions',
-		completed: 'Completed submissions'
-	};
+	const pageTitle = $derived(submissionsPageTitle(view));
+
+	function currentFilterParams() {
+		return {
+			search,
+			clientId,
+			dateFrom,
+			dateTo
+		};
+	}
+
+	function statusFilterHref(targetView: SubmissionsView) {
+		return submissionsHrefForView(targetView, currentFilterParams());
+	}
 
 	function applyFilters() {
-		const params = new URLSearchParams();
-		if (search.trim()) params.set('q', search.trim());
-		if (clientId) params.set('client', clientId);
-		if (dateFrom) params.set('from', dateFrom);
-		if (dateTo) params.set('to', dateTo);
-
-		const base =
-			view === 'all'
-				? '/admin/submissions'
-				: view === 'unfinished'
-					? '/admin/submissions/unfinished'
-					: '/admin/submissions/completed';
-
-		const query = params.toString();
-		goto(query ? `${base}?${query}` : base);
+		goto(submissionsHrefForView(view, currentFilterParams()));
 	}
 
 	function clearFilters() {
@@ -74,13 +75,7 @@
 		clientId = '';
 		dateFrom = '';
 		dateTo = '';
-		const base =
-			view === 'all'
-				? '/admin/submissions'
-				: view === 'unfinished'
-					? '/admin/submissions/unfinished'
-					: '/admin/submissions/completed';
-		goto(base);
+		goto(submissionsHrefForView(view));
 	}
 
 	function openReview(submissionId: string) {
@@ -89,7 +84,7 @@
 	}
 
 	function statusLabel(status: SubmissionListItem['status']): string {
-		if (status === 'submitted') return 'Completed';
+		if (status === 'submitted') return 'Submitted';
 		if (status === 'draft') return 'Pending';
 		return 'Not started';
 	}
@@ -102,9 +97,23 @@
 
 <PageShell>
 	<PageHeader
-		title={titles[view]}
-		lead="Search response content and open a submission to review answers or take action."
+		title={pageTitle}
+		lead="Filter by brief state, search response content, and open a submission to review answers or take action."
 	/>
+
+	<div class="status-filter" role="tablist" aria-label="Brief state">
+		{#each SUBMISSION_STATUS_FILTERS as option (option.view)}
+			<a
+				href={statusFilterHref(option.view)}
+				class="status-filter__btn"
+				class:active={view === option.view}
+				role="tab"
+				aria-selected={view === option.view}
+			>
+				{option.label}
+			</a>
+		{/each}
+	</div>
 
 	<fieldset class="form-group filter-panel">
 		<legend class="form-legend">Filters</legend>
@@ -242,6 +251,47 @@
 		border: 0;
 		padding: 0;
 		margin: 0;
+	}
+
+	.status-filter {
+		display: inline-flex;
+		flex-wrap: wrap;
+		gap: 0.35rem;
+		padding: 0.35rem;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		background: var(--color-surface-muted);
+		width: fit-content;
+		max-width: 100%;
+	}
+
+	.status-filter__btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 2.25rem;
+		padding: 0.45rem 0.9rem;
+		border: 0;
+		border-radius: calc(var(--radius-lg) - 2px);
+		background: transparent;
+		color: var(--color-muted);
+		font: inherit;
+		font-size: 0.875rem;
+		font-weight: 500;
+		text-decoration: none;
+		cursor: pointer;
+	}
+
+	.status-filter__btn:hover {
+		color: var(--color-ink);
+		background: var(--color-surface-hover);
+	}
+
+	.status-filter__btn.active {
+		background: var(--color-surface);
+		color: var(--color-ink);
+		box-shadow: 0 1px 2px rgb(15 23 42 / 0.08);
+		font-weight: 600;
 	}
 
 	.filter-panel {

@@ -1,6 +1,10 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import ThemeToggle from '$lib/components/admin/ThemeToggle.svelte';
+	import {
+		SUBMISSION_STATUS_FILTERS,
+		submissionNavActive
+	} from '$lib/admin/submission-filters';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 
 	let { admin = false, client = false }: { admin?: boolean; client?: boolean } = $props();
@@ -10,11 +14,7 @@
 		{ href: '/admin/question-sets', label: 'Briefs' }
 	] as const;
 
-	const submissionLinks = [
-		{ href: '/admin/submissions', label: 'All' },
-		{ href: '/admin/submissions/unfinished', label: 'Pending' },
-		{ href: '/admin/submissions/completed', label: 'Completed' }
-	] as const;
+	const submissionLinks = SUBMISSION_STATUS_FILTERS.map(({ href, label }) => ({ href, label }));
 
 	const pathname = $derived($page.url.pathname);
 	const brandHref = '/';
@@ -35,16 +35,7 @@
 	}
 
 	function submissionLinkActive(href: string): boolean {
-		if (href === '/admin/submissions') {
-			return (
-				pathname === '/admin/submissions' ||
-				(pathname.startsWith('/admin/submissions/') &&
-					!pathname.startsWith('/admin/submissions/unfinished') &&
-					!pathname.startsWith('/admin/submissions/completed'))
-			);
-		}
-
-		return pathname === href || pathname.startsWith(`${href}/`);
+		return submissionNavActive(pathname, href);
 	}
 
 	function toggleMenu() {

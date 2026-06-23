@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, like, lte, or } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, isNull, like, lte, or } from 'drizzle-orm';
 import {
 	formatCategoryList,
 	normalizeCategoryDefinitions,
@@ -16,7 +16,7 @@ import {
 	type ResponseStatus
 } from '$lib/server/db/schema';
 
-export type SubmissionStatusFilter = ResponseStatus | 'all';
+export type SubmissionStatusFilter = ResponseStatus | 'all' | 'pending';
 
 export type SubmissionFilters = {
 	status?: SubmissionStatusFilter;
@@ -58,7 +58,9 @@ function parseDateEnd(value: string): Date | null {
 function buildConditions(filters: SubmissionFilters) {
 	const conditions = [];
 
-	if (filters.status && filters.status !== 'all') {
+	if (filters.status === 'pending') {
+		conditions.push(or(isNull(responses.status), eq(responses.status, 'draft')));
+	} else if (filters.status && filters.status !== 'all') {
 		conditions.push(eq(responses.status, filters.status));
 	}
 

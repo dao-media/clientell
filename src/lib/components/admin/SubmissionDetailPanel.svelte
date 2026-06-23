@@ -170,6 +170,18 @@
 				>
 					<Btn type="submit" icon={Mail}>Send brief</Btn>
 				</form>
+			{:else if detail.assignment.canResendBrief}
+				<form
+					method="POST"
+					action="{actionBase}?/sendBrief"
+					use:enhance={() => {
+						return async ({ result, update }) => {
+							await afterAction(result, update);
+						};
+					}}
+				>
+					<Btn type="submit" icon={Mail}>Resend brief</Btn>
+				</form>
 			{/if}
 
 			<Btn variant="secondary" href="{actionBase}/preview" target="_blank" rel="noopener" icon={Eye}>

@@ -1,10 +1,11 @@
 import type { RequestEvent } from '@sveltejs/kit';
+import type { SubmissionsView } from '$lib/admin/submission-filters';
 import { listClientsForFilter, listSubmissions, type SubmissionStatusFilter } from '$lib/server/submissions';
 
-export type SubmissionsView = 'all' | 'unfinished' | 'completed';
+export type { SubmissionsView };
 
 export function statusForView(view: SubmissionsView): SubmissionStatusFilter {
-	if (view === 'unfinished') return 'draft';
+	if (view === 'unfinished') return 'pending';
 	if (view === 'completed') return 'submitted';
 	return 'all';
 }

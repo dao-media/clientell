@@ -61,8 +61,11 @@
 			<form method="POST" action="?/sendBrief">
 				<Btn type="submit">Send brief</Btn>
 			</form>
-		{:else if data.assignment.sentAt}
-			<p class="sent-note">Sent to client {formatRelativeTime(new Date(data.assignment.sentAt))}</p>
+		{:else if data.canResendBrief}
+			<form method="POST" action="?/sendBrief">
+				<Btn type="submit">Resend brief</Btn>
+			</form>
+			<p class="sent-note">First sent {formatRelativeTime(new Date(data.assignment.sentAt!))}</p>
 		{/if}
 		{#if data.assignment.sentAt}
 			<form method="POST" action="?/sendReminder">

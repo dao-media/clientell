@@ -212,24 +212,34 @@
 		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 		gap: 0.75rem;
 		align-items: stretch;
-		min-height: 8rem;
 	}
 
-	.answer-split__text,
-	.answer-split__media {
+	.answer-split__text {
 		display: flex;
+		flex-direction: column;
 		min-width: 0;
 		min-height: 8rem;
+		align-self: stretch;
+	}
+
+	.answer-split__media {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+		align-self: stretch;
 	}
 
 	.answer-split__text :global(.field-split) {
-		flex: 1;
+		flex: 1 1 auto;
 		min-height: 8rem;
 		height: 100%;
+		width: 100%;
+		box-sizing: border-box;
 	}
 
 	.answer-split__text :global(textarea.field-split) {
 		resize: none;
+		overflow-y: auto;
 	}
 
 	@media (max-width: 640px) {
@@ -239,10 +249,6 @@
 
 		.answer-split__text :global(.field-split) {
 			min-height: 6rem;
-		}
-
-		.answer-split__media {
-			min-height: 12rem;
 		}
 	}
 </style>

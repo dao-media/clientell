@@ -2,7 +2,7 @@ import { error, fail } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 import { resetClientPortalPin } from '$lib/server/auth/reset-client-pin';
 import { getPortalUrl } from '$lib/server/config';
-import { sendBriefReminder, sendBriefReadyEmail, sendPortalLinkEmail } from '$lib/server/email/reminder';
+import { sendBriefAccessHelpEmail, sendBriefReminder, sendBriefReadyEmail, sendPortalLinkEmail } from '$lib/server/email/reminder';
 import { getSubmissionDetail } from '$lib/server/submissions';
 import { assignments, questionSets, responses } from '$lib/server/db/schema';
 	import { formatCategoryList, mergeCategoryDefinitions, normalizeClientServiceIds } from '$lib/categories';
@@ -31,7 +31,8 @@ export const load: PageServerLoad = async ({ locals, params, platform }) => {
 		progress: detail.progress,
 		portalUrl: getPortalUrl(platform),
 		serviceOptions,
-		canSendBrief: !detail.assignment.sentAt && Boolean(detail.assignment.invitationPin)
+		canSendBrief: !detail.assignment.sentAt && Boolean(detail.assignment.invitationPin),
+		canResendBrief: Boolean(detail.assignment.sentAt)
 	};
 };
 
@@ -40,8 +41,22 @@ export const actions: Actions = {
 		const detail = await getSubmissionDetail(locals.db, params.id);
 		if (!detail) return fail(404, { error: 'Submission not found.' });
 
+		const briefTitle =
+			formatCategoryList(detail.briefCategories, detail.setCategories) || detail.questionSet.title;
+
 		if (detail.assignment.sentAt) {
-			return fail(400, { error: 'This brief was already sent to the client.' });
+			const result = await sendBriefAccessHelpEmail(platform, {
+				to: detail.client.email,
+				contactName: detail.client.contactName,
+				loginEmail: detail.client.email,
+				briefTitle
+			});
+
+			if (!result.ok) {
+				return fail(500, { emailResult: result, action: 'brief-resend' as const });
+			}
+
+			return { emailResult: result, action: 'brief-resend' as const };
 		}
 
 		const pin = detail.assignment.invitationPin;

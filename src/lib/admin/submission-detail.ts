@@ -4,6 +4,7 @@ export type SubmissionDetail = {
 		isActive: boolean;
 		sentAt: string | null;
 		canSendBrief: boolean;
+		canResendBrief: boolean;
 		createdAt: string;
 	};
 	client: {
