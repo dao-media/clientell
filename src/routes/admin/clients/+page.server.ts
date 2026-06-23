@@ -6,6 +6,7 @@ import {
 	parseCategoriesFromFormData
 } from '$lib/categories';
 import { createClientId } from '$lib/ids';
+import { resetClientPortalPin } from '$lib/server/auth/reset-client-pin';
 import { CLIENT_EMAIL_TAKEN_MESSAGE, isClientEmailTaken } from '$lib/server/clients-email';
 import { registerPageDataDepends } from '$lib/admin/refresh-data';
 import { loadClientsPageData } from '$lib/server/clients-page';
@@ -109,5 +110,23 @@ export const actions: Actions = {
 		await locals.db.delete(clients).where(inArray(clients.id, clientIds));
 
 		return { ...(await clientsAfterMutation(locals)), deletedCount: clientIds.length };
+	},
+
+	resetClientPin: async ({ request, locals }) => {
+		const data = await request.formData();
+		const clientId = String(data.get('clientId') ?? '').trim();
+
+		if (!clientId) {
+			return fail(400, { resetPinError: 'Missing client id.' });
+		}
+
+		const pin = await resetClientPortalPin(locals.db, clientId);
+		if (!pin) {
+			return fail(400, {
+				resetPinError: 'This client has no active briefs to reset the PIN for.'
+			});
+		}
+
+		return { resetPin: pin };
 	}
 };

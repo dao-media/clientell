@@ -8,6 +8,7 @@
 	import FileText from '@lucide/svelte/icons/file-text';
 	import Link2 from '@lucide/svelte/icons/link-2';
 	import Video from '@lucide/svelte/icons/video';
+	import X from '@lucide/svelte/icons/x';
 
 	let {
 		item,
@@ -57,8 +58,13 @@
 	</div>
 
 	{#if !disabled && onRemove}
-		<button type="button" class="preview-remove" aria-label="Remove {item.name}" onclick={() => onRemove(item.id)}>
-			×
+		<button
+			type="button"
+			class="preview-remove"
+			aria-label="Remove {item.name}"
+			onclick={() => onRemove(item.id)}
+		>
+			<X size={12} strokeWidth={2.5} aria-hidden="true" />
 		</button>
 	{/if}
 </article>
@@ -84,6 +90,7 @@
 		width: 5.5rem;
 		padding: 0.35rem;
 		border-radius: var(--radius);
+		overflow: visible;
 	}
 
 	.preview-media {
@@ -157,7 +164,6 @@
 	.preview-remove {
 		border: 0;
 		background: var(--color-surface);
-		font-size: 1rem;
 		line-height: 1;
 		cursor: pointer;
 		color: var(--color-muted);
@@ -167,15 +173,24 @@
 
 	.compact .preview-remove {
 		position: absolute;
-		top: 0.15rem;
-		right: 0.15rem;
-		width: 1.25rem;
-		height: 1.25rem;
+		top: 0.2rem;
+		right: 0.2rem;
+		z-index: 2;
+		width: 1.375rem;
+		height: 1.375rem;
 		display: grid;
 		place-items: center;
 		padding: 0;
-		border: 1px solid var(--color-border);
-		box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+		border: 0;
+		border-radius: 999px;
+		background: rgb(15 23 42 / 0.72);
+		color: #fff;
+		box-shadow: 0 1px 3px rgb(0 0 0 / 0.2);
+	}
+
+	.compact .preview-remove:hover {
+		background: rgb(15 23 42 / 0.9);
+		color: #fff;
 	}
 
 	.preview-remove:hover {

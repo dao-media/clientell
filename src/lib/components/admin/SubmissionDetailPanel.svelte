@@ -18,6 +18,8 @@
 		detail = null,
 		loading = false,
 		loadError = '',
+		clientCompany = '',
+		onClientClick,
 		showFooter = true,
 		onDismiss,
 		onActionComplete
@@ -25,6 +27,8 @@
 		detail?: SubmissionDetail | null;
 		loading?: boolean;
 		loadError?: string;
+		clientCompany?: string;
+		onClientClick?: () => void;
 		showFooter?: boolean;
 		onDismiss?: () => void;
 		onActionComplete?: () => void | Promise<void>;
@@ -42,6 +46,7 @@
 		detail?.response?.status === 'submitted' ? 'submitted' : 'gray'
 	);
 	const actionBase = $derived(detail ? `/admin/submissions/${detail.assignment.id}` : '');
+	const companyLabel = $derived(clientCompany || detail?.client.company || '');
 
 	$effect(() => {
 		detail;
@@ -97,6 +102,13 @@
 		{:else if detail}
 			<div class="detail-summary">
 				<div class="detail-meta">
+					{#if companyLabel && onClientClick}
+						<button type="button" class="client-company-chip" onclick={onClientClick}>
+							{companyLabel}
+						</button>
+					{:else if companyLabel}
+						<span class="client-company-label">{companyLabel}</span>
+					{/if}
 					<Chip variant={statusVariant}>{statusLabel}</Chip>
 					<span>{detail.progress}% complete</span>
 				</div>
@@ -232,6 +244,29 @@
 		flex-wrap: wrap;
 		font-size: 0.875rem;
 		color: var(--color-muted);
+	}
+
+	.client-company-chip {
+		display: inline-flex;
+		align-items: center;
+		padding: 0.2rem 0.65rem;
+		border: 1px solid var(--color-border);
+		border-radius: 999px;
+		background: var(--color-surface-hover);
+		color: var(--color-text);
+		font-size: 0.8125rem;
+		font-weight: 500;
+		cursor: pointer;
+	}
+
+	.client-company-chip:hover {
+		border-color: var(--color-accent);
+		color: var(--color-accent);
+	}
+
+	.client-company-label {
+		font-weight: 500;
+		color: var(--color-text);
 	}
 
 	.detail-lead,

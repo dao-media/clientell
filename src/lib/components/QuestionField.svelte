@@ -40,6 +40,14 @@
 	const answerValue = $derived(String(answers[question.id] ?? ''));
 	const restrictionStats = $derived(inputRestrictionStats(question.inputRestriction, answerValue));
 	const nativeRequired = $derived(question.required && !question.allowAttachments && !preview);
+	const splitWithUpload = $derived(
+		question.allowAttachments &&
+			(question.type === 'textarea' ||
+				question.type === 'text' ||
+				question.type === 'email' ||
+				question.type === 'url' ||
+				question.type === 'number')
+	);
 
 	function validateCurrentAnswer(value: string) {
 		restrictionError =
@@ -71,16 +79,13 @@
 	});
 </script>
 
-<div class="space-y-2">
-	<label class="label" for={question.id}>
-		{question.label}
-		{#if question.required}<span class="text-red-500">*</span>{/if}
-	</label>
-
+{#snippet answerInput(split = false)}
 	{#if question.type === 'textarea'}
 		<textarea
 			id={question.id}
-			class="field min-h-32 resize-y"
+			class="field"
+			class:field-split={split}
+			class:min-h-32={!split}
 			class:field-invalid={!!restrictionError}
 			name={question.id}
 			value={answerValue}
@@ -128,6 +133,7 @@
 		<input
 			id={question.id}
 			class="field"
+			class:field-split={split}
 			class:field-invalid={!!restrictionError}
 			name={question.id}
 			type={question.type === 'number'
@@ -147,6 +153,36 @@
 			aria-describedby={restrictionError ? `${question.id}-restriction-error` : undefined}
 		/>
 	{/if}
+{/snippet}
+
+<div class="question-field">
+	<label class="label" for={question.id}>
+		{question.label}
+		{#if question.required}<span class="text-red-500">*</span>{/if}
+	</label>
+
+	{#if splitWithUpload}
+		<div class="answer-split">
+			<div class="answer-split__text">
+				{@render answerInput(true)}
+			</div>
+			<div class="answer-split__media">
+				<FileLinkUploader
+					questionId={question.id}
+					bind:attachments
+					{disabled}
+					{preview}
+					layout="split"
+				/>
+			</div>
+		</div>
+	{:else}
+		{@render answerInput(false)}
+
+		{#if question.allowAttachments}
+			<FileLinkUploader questionId={question.id} bind:attachments {disabled} {preview} />
+		{/if}
+	{/if}
 
 	{#if restrictionHint}
 		<p class="help">{restrictionHint}</p>
@@ -163,8 +199,50 @@
 	{#if question.helpText}
 		<p class="help">{question.helpText}</p>
 	{/if}
-
-	{#if question.allowAttachments}
-		<FileLinkUploader questionId={question.id} bind:attachments {disabled} {preview} />
-	{/if}
 </div>
+
+<style>
+	.question-field {
+		display: grid;
+		gap: 0.5rem;
+	}
+
+	.answer-split {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		gap: 0.75rem;
+		align-items: stretch;
+		min-height: 8rem;
+	}
+
+	.answer-split__text,
+	.answer-split__media {
+		display: flex;
+		min-width: 0;
+		min-height: 8rem;
+	}
+
+	.answer-split__text :global(.field-split) {
+		flex: 1;
+		min-height: 8rem;
+		height: 100%;
+	}
+
+	.answer-split__text :global(textarea.field-split) {
+		resize: none;
+	}
+
+	@media (max-width: 640px) {
+		.answer-split {
+			grid-template-columns: 1fr;
+		}
+
+		.answer-split__text :global(.field-split) {
+			min-height: 6rem;
+		}
+
+		.answer-split__media {
+			min-height: 12rem;
+		}
+	}
+</style>

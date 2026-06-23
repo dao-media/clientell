@@ -105,6 +105,8 @@ Note the deployment URL in the output (something like `https://briefly.pages.dev
 | `SESSION_SECRET`| **Secret** | A long random string (32+ chars)   |
 | `PUBLIC_ORIGIN` | Plain text | `https://briefly.daneoleary.com`   |
 
+Email sending uses the Cloudflare Email REST API. Set `EMAIL_API_TOKEN` as a **Production** secret with **Account → Email Sending → Edit** permission. If that secret is missing or invalid, the app cannot send mail (Cloudflare Pages does not support the Workers `send_email` binding).
+
 6. Click **Save**
 7. **Redeploy** so the new variables take effect:
 

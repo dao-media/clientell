@@ -24,15 +24,29 @@ type EmailBinding = {
 	}) => Promise<unknown>;
 };
 
-export function getFromAddress(): string {
-	return env.EMAIL_FROM ?? 'briefly@daneoleary.com';
+export function getFromAddress(platform?: App.Platform): string {
+	const platformEnv = platform?.env as { EMAIL_FROM?: string } | undefined;
+	return platformEnv?.EMAIL_FROM ?? env.EMAIL_FROM ?? 'briefly@daneoleary.com';
 }
 
-function getApiCredentials(): { accountId: string; token: string } | null {
-	const accountId = env.CLOUDFLARE_ACCOUNT_ID?.trim();
-	const token = (env.EMAIL_API_TOKEN ?? env.CLOUDFLARE_API_TOKEN)?.trim();
+function readEnvString(platform: App.Platform | undefined, key: string): string | undefined {
+	const platformEnv = platform?.env as Record<string, string | undefined> | undefined;
+	return platformEnv?.[key] ?? (env as Record<string, string | undefined>)[key];
+}
+
+function getApiCredentials(
+	platform?: App.Platform
+): { accountId: string; token: string; fallbackToken?: string } | null {
+	const accountId = readEnvString(platform, 'CLOUDFLARE_ACCOUNT_ID')?.trim();
+	const emailToken = readEnvString(platform, 'EMAIL_API_TOKEN')?.trim();
+	const cloudflareToken = readEnvString(platform, 'CLOUDFLARE_API_TOKEN')?.trim();
+	const token = emailToken || cloudflareToken;
 	if (!accountId || !token) return null;
-	return { accountId, token };
+
+	const fallbackToken =
+		emailToken && cloudflareToken && emailToken !== cloudflareToken ? cloudflareToken : undefined;
+
+	return { accountId, token, fallbackToken };
 }
 
 async function sendViaBinding(
@@ -45,59 +59,78 @@ async function sendViaBinding(
 	try {
 		await email.send({
 			to: message.to,
-			from: { email: getFromAddress(), name: message.fromName ?? 'Briefly' },
+			from: { email: getFromAddress(platform), name: message.fromName ?? 'Briefly' },
 			subject: message.subject,
 			html: message.html,
 			text: message.text
 		});
 		return { ok: true, simulated: false, message: 'Email sent.' };
 	} catch (error) {
+		const detail = error instanceof Error ? error.message : 'Could not send email.';
 		console.error('[briefly email] binding send failed', error);
-		return { ok: false, simulated: false, message: 'Could not send email.' };
+		return { ok: false, simulated: false, message: detail };
 	}
 }
 
-async function sendViaRestApi(message: OutboundEmail): Promise<SendResult | null> {
-	const credentials = getApiCredentials();
+async function sendViaRestApi(
+	platform: App.Platform | undefined,
+	message: OutboundEmail
+): Promise<SendResult | null> {
+	const credentials = getApiCredentials(platform);
 	if (!credentials) return null;
 
-	const response = await fetch(
-		`https://api.cloudflare.com/client/v4/accounts/${credentials.accountId}/email/sending/send`,
-		{
-			method: 'POST',
-			headers: {
-				Authorization: `Bearer ${credentials.token}`,
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({
-				to: message.to,
-				from: { address: getFromAddress(), name: message.fromName ?? 'Briefly' },
-				subject: message.subject,
-				html: message.html,
-				text: message.text
-			})
-		}
-	);
+	const attempt = async (token: string): Promise<SendResult> => {
+		const response = await fetch(
+			`https://api.cloudflare.com/client/v4/accounts/${credentials.accountId}/email/sending/send`,
+			{
+				method: 'POST',
+				headers: {
+					Authorization: `Bearer ${token}`,
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					to: message.to,
+					from: { address: getFromAddress(platform), name: message.fromName ?? 'Briefly' },
+					subject: message.subject,
+					html: message.html,
+					text: message.text
+				})
+			}
+		);
 
-	const payload = (await response.json()) as {
-		success?: boolean;
-		errors?: Array<{ message?: string }>;
-		result?: { delivered?: string[]; permanent_bounces?: string[] };
+		const payload = (await response.json()) as {
+			success?: boolean;
+			errors?: Array<{ message?: string }>;
+			result?: { delivered?: string[]; permanent_bounces?: string[] };
+		};
+
+		if (!response.ok || !payload.success) {
+			const detail = payload.errors?.[0]?.message ?? `HTTP ${response.status}`;
+			console.error('[briefly email] REST send failed', detail, payload);
+			const authFailed = detail === 'Authentication error.' || detail === 'Authentication error';
+			const userMessage = authFailed
+				? 'Email API token is invalid or missing Email Sending permission. Update EMAIL_API_TOKEN in Pages secrets (Account → Email Sending → Edit).'
+				: detail;
+			return { ok: false, simulated: false, message: userMessage, authFailed };
+		}
+
+		const delivered = payload.result?.delivered?.length ?? 0;
+		const bounced = payload.result?.permanent_bounces?.length ?? 0;
+		if (bounced > 0 && delivered === 0) {
+			return { ok: false, simulated: false, message: 'Email bounced.', authFailed: false };
+		}
+
+		return { ok: true, simulated: false, message: 'Email sent.', authFailed: false };
 	};
 
-	if (!response.ok || !payload.success) {
-		const detail = payload.errors?.[0]?.message ?? `HTTP ${response.status}`;
-		console.error('[briefly email] REST send failed', detail, payload);
-		return { ok: false, simulated: false, message: detail };
+	let result = await attempt(credentials.token);
+	if (!result.ok && result.authFailed && credentials.fallbackToken) {
+		console.warn('[briefly email] primary token rejected; retrying with fallback token');
+		result = await attempt(credentials.fallbackToken);
 	}
 
-	const delivered = payload.result?.delivered?.length ?? 0;
-	const bounced = payload.result?.permanent_bounces?.length ?? 0;
-	if (bounced > 0 && delivered === 0) {
-		return { ok: false, simulated: false, message: 'Email bounced.' };
-	}
-
-	return { ok: true, simulated: false, message: 'Email sent.' };
+	const { authFailed: _authFailed, ...sendResult } = result;
+	return sendResult;
 }
 
 export async function sendOutboundEmail(
@@ -107,7 +140,7 @@ export async function sendOutboundEmail(
 	const viaBinding = await sendViaBinding(platform, message);
 	if (viaBinding) return viaBinding;
 
-	const viaApi = await sendViaRestApi(message);
+	const viaApi = await sendViaRestApi(platform, message);
 	if (viaApi) return viaApi;
 
 	console.log('[briefly email]', message.subject, '→', message.to);

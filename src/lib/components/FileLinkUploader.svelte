@@ -16,13 +16,15 @@
 		attachments = $bindable<AttachmentItem[]>([]),
 		disabled = false,
 		preview = false,
-		uploadUrl = '/api/uploads'
+		uploadUrl = '/api/uploads',
+		layout = 'stacked'
 	}: {
 		questionId: string;
 		attachments?: AttachmentItem[];
 		disabled?: boolean;
 		preview?: boolean;
 		uploadUrl?: string;
+		layout?: 'stacked' | 'split';
 	} = $props();
 
 	let linkInput = $state('');
@@ -125,7 +127,7 @@
 	}
 </script>
 
-<div class="uploader" class:preview>
+<div class="uploader" class:preview class:uploader-split={layout === 'split'}>
 	<input type="hidden" name={fieldName} value={JSON.stringify(attachments)} />
 
 	<div
@@ -262,6 +264,11 @@
 		margin-top: 0.75rem;
 	}
 
+	.uploader.uploader-split {
+		margin-top: 0;
+		height: 100%;
+	}
+
 	.media-bin {
 		display: flex;
 		flex-direction: column;
@@ -271,6 +278,15 @@
 		border-radius: var(--radius-lg);
 		background: var(--color-surface-muted);
 		overflow: hidden;
+	}
+
+	.uploader-split .media-bin {
+		flex: 1;
+		width: 100%;
+		max-width: none;
+		aspect-ratio: unset;
+		min-height: 8rem;
+		height: 100%;
 	}
 
 	.media-bin.dragging {

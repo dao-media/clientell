@@ -71,6 +71,8 @@
 	let servicesDraft = $state<string[]>([]);
 	let servicesSaving = $state(false);
 	let wasOpen = $state(false);
+	let resetPinMessage = $state('');
+	let resetPinError = $state('');
 
 	$effect(() => {
 		const justOpened = open && !wasOpen;
@@ -84,6 +86,8 @@
 		phone = formatUsPhoneInput(client?.phone ?? '');
 		selectedServices = [...(client?.services ?? [])];
 		saveError = '';
+		resetPinMessage = '';
+		resetPinError = '';
 		view = 'client';
 		slideDirection = 'forward';
 		animatePanel = false;
@@ -437,9 +441,38 @@
 							</div>
 
 							<footer class="client-modal-footer">
+								{#if resetPinError}
+									<Alert variant="error" title="Could not reset PIN" subtitle={resetPinError} />
+								{/if}
+								{#if resetPinMessage}
+									<Alert variant="warning" title="PIN reset" subtitle={resetPinMessage} />
+								{/if}
 								{#if deleteError}
 									<Alert variant="error" title="Could not delete client" subtitle={deleteError} />
 								{/if}
+								<form
+									method="POST"
+									action="/admin/clients?/resetClientPin"
+									class="reset-pin-form"
+									use:enhance={() => {
+										return async ({ result, update }) => {
+											resetPinError = '';
+											resetPinMessage = '';
+											if (result.type === 'success' && typeof result.data?.resetPin === 'string') {
+												resetPinMessage = `Share this temporary PIN with the client: ${result.data.resetPin}. They must choose a new PIN on first sign-in.`;
+											} else if (result.type === 'failure') {
+												resetPinError =
+													typeof result.data?.resetPinError === 'string'
+														? result.data.resetPinError
+														: 'Could not reset PIN.';
+											}
+											await update({ reset: false });
+										};
+									}}
+								>
+									<input type="hidden" name="clientId" value={client?.id} />
+									<Btn variant="secondary" type="submit">Reset PIN</Btn>
+								</form>
 								<form
 									method="POST"
 									action="?/deleteClient"
@@ -469,6 +502,8 @@
 									{detail}
 									loading={detailLoading}
 									loadError={detailError}
+									clientCompany={company}
+									onClientClick={backToClient}
 									showFooter={true}
 									onActionComplete={() =>
 										selectedAssignmentId ? loadDetail(selectedAssignmentId) : undefined}
@@ -609,6 +644,7 @@
 		flex-shrink: 0;
 	}
 
+	.reset-pin-form,
 	.delete-form {
 		display: flex;
 		justify-content: flex-start;

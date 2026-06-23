@@ -1,20 +1,28 @@
 import { error, fail } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
-import { generatePin, hashPin } from '$lib/server/auth/pin';
+import { resetClientPortalPin } from '$lib/server/auth/reset-client-pin';
 import { getPortalUrl } from '$lib/server/config';
 import { sendBriefReminder, sendBriefReadyEmail, sendPortalLinkEmail } from '$lib/server/email/reminder';
 import { getSubmissionDetail } from '$lib/server/submissions';
-import { assignments, responses } from '$lib/server/db/schema';
-import { formatCategoryList } from '$lib/categories';
+import { assignments, questionSets, responses } from '$lib/server/db/schema';
+	import { formatCategoryList, mergeCategoryDefinitions, normalizeClientServiceIds } from '$lib/categories';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, params, platform }) => {
 	const detail = await getSubmissionDetail(locals.db, params.id);
 	if (!detail) error(404, 'Submission not found');
 
+	const setRows = await locals.db
+		.select({ categories: questionSets.categories })
+		.from(questionSets);
+	const serviceOptions = mergeCategoryDefinitions(setRows.map((set) => set.categories));
+
 	return {
 		assignment: detail.assignment,
-		client: detail.client,
+		client: {
+			...detail.client,
+			services: normalizeClientServiceIds(detail.client.services ?? [], serviceOptions)
+		},
 		questionSet: detail.questionSet,
 		response: detail.response,
 		questions: detail.questions,
@@ -22,6 +30,7 @@ export const load: PageServerLoad = async ({ locals, params, platform }) => {
 		setCategories: detail.setCategories,
 		progress: detail.progress,
 		portalUrl: getPortalUrl(platform),
+		serviceOptions,
 		canSendBrief: !detail.assignment.sentAt && Boolean(detail.assignment.invitationPin)
 	};
 };
@@ -38,7 +47,7 @@ export const actions: Actions = {
 		const pin = detail.assignment.invitationPin;
 		if (!pin) {
 			return fail(400, {
-				error: 'Generate a new PIN before sending this brief to the client.'
+				error: 'Reset the client PIN before sending this brief.'
 			});
 		}
 
@@ -89,24 +98,18 @@ export const actions: Actions = {
 		return { emailResult: result, action: 'portal' as const };
 	},
 
-	rotatePin: async ({ locals, params }) => {
+	resetClientPin: async ({ locals, params }) => {
 		const detail = await getSubmissionDetail(locals.db, params.id);
 		if (!detail) return fail(404, { error: 'Submission not found.' });
 
-		const pin = generatePin();
-		const { hash, salt } = await hashPin(pin);
+		const pin = await resetClientPortalPin(locals.db, detail.client.id);
+		if (!pin) {
+			return fail(400, {
+				resetPinError: 'This client has no active briefs to reset the PIN for.'
+			});
+		}
 
-		await locals.db
-			.update(assignments)
-			.set({
-				pinHash: hash,
-				pinSalt: salt,
-				pinMustChange: true,
-				...(detail.assignment.sentAt ? {} : { invitationPin: pin })
-			})
-			.where(eq(assignments.id, params.id));
-
-		return { rotatedPin: pin };
+		return { resetPin: pin };
 	},
 
 	toggleActive: async ({ locals, params }) => {

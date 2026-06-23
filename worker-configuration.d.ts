@@ -4,11 +4,17 @@
 interface __BaseEnv_Env {
 	UPLOADS: R2Bucket;
 	DB: D1Database;
-	EMAIL_FROM: "briefly@daneoleary.com";
-	CLOUDFLARE_ACCOUNT_ID: "f10ff17695a7e81951dc05a2a149c1db";
 	ADMIN_PASSWORD: string;
 	SESSION_SECRET: string;
 	PUBLIC_ORIGIN: string;
+	EMAIL_FROM: string;
+	CLOUDFLARE_ACCOUNT_ID: string;
+	CLOUDFLARE_DATABASE_ID: string;
+	CLOUDFLARE_API_TOKEN: string;
+	CLOUDFLARE_D1_TOKEN: string;
+	EMAIL_API_TOKEN: string;
+	R2_ACCESS_KEY_ID: string;
+	R2_SECRET_ACCESS_KEY: string;
 }
 declare namespace Cloudflare {
 	interface Env extends __BaseEnv_Env {}
