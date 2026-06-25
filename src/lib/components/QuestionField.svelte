@@ -86,6 +86,7 @@
 		<textarea
 			id={question.id}
 			class="field"
+			class:client-brief-answer={client}
 			class:field-split={split}
 			class:min-h-32={!split}
 			class:field-invalid={!!restrictionError}
@@ -103,6 +104,7 @@
 		<select
 			id={question.id}
 			class="field"
+			class:client-brief-answer={client}
 			name={question.id}
 			value={answerValue}
 			onchange={(event) => {
@@ -135,6 +137,7 @@
 		<input
 			id={question.id}
 			class="field"
+			class:client-brief-answer={client}
 			class:field-split={split}
 			class:field-invalid={!!restrictionError}
 			name={question.id}
@@ -160,10 +163,10 @@
 <div class="question-field" class:question-field--client={client}>
 	<label class="label" for={question.id}>
 		{#if client}
-			<h4 class="question-heading">
+			<h5 class="question-heading">
 				{question.label}
 				{#if question.required}<span class="text-red-500">*</span>{/if}
-			</h4>
+			</h5>
 		{:else}
 			{question.label}
 			{#if question.required}<span class="text-red-500">*</span>{/if}
