@@ -1,64 +1,129 @@
-import { attachAuthFormDebug, authDebug, maskEmail, analyzePinValue } from '$lib/debug/auth-debug';
+import { applyAction, deserialize } from '$app/forms';
+import { authDebug, maskEmail, analyzePinValue } from '$lib/debug/auth-debug';
 import { normalizeEmail } from '$lib/utils';
-import { normalizePinInput } from '$lib/utils/pin';
+import { isValidPin, normalizePinInput } from '$lib/utils/pin';
 
-/** Normalize auth fields before submit. */
+function resolveActionUrl(form: HTMLFormElement): URL {
+	const actionAttr = form.getAttribute('action');
+	if (actionAttr) {
+		return new URL(actionAttr, window.location.href);
+	}
+	return new URL(form.action, window.location.href);
+}
+
+function readAuthFormData(form: HTMLFormElement): FormData {
+	const emailInput = form.querySelector<HTMLInputElement>('input[name="email"]');
+	const email = normalizeEmail(emailInput?.value ?? '');
+
+	const pin = normalizePinInput(
+		form.querySelector<HTMLInputElement>('input[name="pin"]')?.value ?? ''
+	);
+	const confirmPin = normalizePinInput(
+		form.querySelector<HTMLInputElement>('input[name="confirmPin"]')?.value ?? ''
+	);
+
+	const duration =
+		form.querySelector<HTMLSelectElement>('select[name="loginDuration"]')?.value ?? '';
+	const password = form.querySelector<HTMLInputElement>('input[name="password"]')?.value ?? '';
+
+	const body = new FormData();
+	if (emailInput) body.set('email', email);
+	if (form.querySelector('input[name="pin"]')) body.set('pin', pin);
+	if (form.querySelector('input[name="confirmPin"]')) body.set('confirmPin', confirmPin);
+	if (form.querySelector('select[name="loginDuration"]') && duration) {
+		body.set('loginDuration', duration);
+	}
+	if (form.querySelector('input[name="password"]')) body.set('password', password);
+
+	return body;
+}
+
+/** Normalize auth fields in the DOM (keeps hidden PIN + email inputs in sync). */
 export function prepareAuthFormForSubmit(form: HTMLFormElement, formId = 'auth-form') {
 	const before = {
-		email: maskEmail(String(new FormData(form).get('email') ?? '')),
-		pin: analyzePinValue(String(new FormData(form).get('pin') ?? '')),
-		confirmPin: analyzePinValue(String(new FormData(form).get('confirmPin') ?? ''))
+		email: maskEmail(form.querySelector<HTMLInputElement>('input[name="email"]')?.value ?? ''),
+		pin: analyzePinValue(form.querySelector<HTMLInputElement>('input[name="pin"]')?.value ?? ''),
+		confirmPin: analyzePinValue(
+			form.querySelector<HTMLInputElement>('input[name="confirmPin"]')?.value ?? ''
+		)
 	};
 
-	const email = form.querySelector<HTMLInputElement>('input[name="email"]');
-	if (email) {
-		const raw = email.value;
-		email.value = normalizeEmail(raw);
-		if (raw !== email.value) {
-			authDebug('email-normalized', { formId, before: maskEmail(raw), after: maskEmail(email.value) });
-		}
+	const emailInput = form.querySelector<HTMLInputElement>('input[name="email"]');
+	if (emailInput) {
+		const raw = emailInput.value;
+		emailInput.value = normalizeEmail(raw);
 	}
 
 	for (const pinInput of form.querySelectorAll<HTMLInputElement>(
 		'input[name="pin"], input[name="confirmPin"]'
 	)) {
-		const raw = pinInput.value;
-		pinInput.value = normalizePinInput(raw);
-		if (raw !== pinInput.value) {
-			authDebug('pin-normalized', {
-				formId,
-				field: pinInput.name,
-				before: analyzePinValue(raw),
-				after: analyzePinValue(pinInput.value)
-			});
-		}
+		pinInput.value = normalizePinInput(pinInput.value);
 	}
 
 	authDebug('form-prepared', {
 		formId,
 		before,
 		after: {
-			email: maskEmail(String(new FormData(form).get('email') ?? '')),
-			pin: analyzePinValue(String(new FormData(form).get('pin') ?? '')),
-			confirmPin: analyzePinValue(String(new FormData(form).get('confirmPin') ?? ''))
+			email: maskEmail(form.querySelector<HTMLInputElement>('input[name="email"]')?.value ?? ''),
+			pin: analyzePinValue(form.querySelector<HTMLInputElement>('input[name="pin"]')?.value ?? ''),
+			confirmPin: analyzePinValue(
+				form.querySelector<HTMLInputElement>('input[name="confirmPin"]')?.value ?? ''
+			)
 		}
 	});
 }
 
-/** Submit without browser constraint validation (works around iOS ignoring novalidate). */
-export function submitAuthFormElement(form: HTMLFormElement, formId = 'auth-form') {
+/** POST via fetch — never triggers native constraint validation. */
+export async function submitAuthFormElement(form: HTMLFormElement, formId = 'auth-form') {
 	form.noValidate = true;
 	prepareAuthFormForSubmit(form, formId);
+
+	const body = readAuthFormData(form);
+	const action = resolveActionUrl(form);
+
+	const hasPin = form.querySelector('input[name="pin"]') != null;
+	const pin = String(body.get('pin') ?? '');
+	if (hasPin && !isValidPin(pin)) {
+		authDebug('client-pin-rejected', { formId, pin: analyzePinValue(pin) });
+		const isHomePortal = action.search.includes('portalLogin');
+		await applyAction({
+			type: 'failure',
+			status: 400,
+			data: isHomePortal
+				? { portalError: 'Enter a valid email and 6-digit PIN.' }
+				: { error: 'Enter a 6-digit PIN.' }
+		});
+		return;
+	}
+
 	authDebug('form-submitting', {
 		formId,
-		action: form.action,
-		method: form.method,
-		bypass: 'programmatic'
+		via: 'fetch',
+		action: action.href,
+		email: maskEmail(String(body.get('email') ?? '')),
+		pin: analyzePinValue(pin)
 	});
-	form.submit();
+
+	const response = await fetch(action, {
+		method: 'POST',
+		headers: {
+			accept: 'application/json',
+			'x-sveltekit-action': 'true'
+		},
+		body,
+		cache: 'no-store'
+	});
+
+	const result = deserialize(await response.text());
+	if (result.type === 'error') {
+		result.status = response.status;
+	}
+
+	authDebug('form-submit-result', { formId, type: result.type, status: response.status });
+
+	await applyAction(result);
 }
 
-/** Handler for form submit events (kept for Enter-key paths). */
 export function submitAuthForm(event: SubmitEvent, formId = 'auth-form') {
 	event.preventDefault();
 	const form = event.currentTarget;
@@ -66,8 +131,7 @@ export function submitAuthForm(event: SubmitEvent, formId = 'auth-form') {
 		authDebug('submit-aborted', { formId, reason: 'target-not-form' });
 		return;
 	}
-
-	submitAuthFormElement(form, formId);
+	void submitAuthFormElement(form, formId);
 }
 
 export function submitAuthFormOnEnter(
@@ -79,17 +143,18 @@ export function submitAuthFormOnEnter(
 	if (!(event.target instanceof HTMLInputElement)) return;
 
 	const formId = options.formId ?? 'auth-form';
+	const form = event.currentTarget;
 
 	if (options.focusPinOnEmail && event.target.name === 'email') {
 		event.preventDefault();
 		authDebug('enter-focus-pin', { formId });
-		event.currentTarget.querySelector<HTMLInputElement>('input[name="pin"]')?.focus();
+		form.querySelector<HTMLInputElement>('[data-auth-pin]')?.focus();
 		return;
 	}
 
 	event.preventDefault();
-	authDebug('enter-submit', { formId, field: event.target.name });
-	submitAuthFormElement(event.currentTarget, formId);
+	authDebug('enter-submit', { formId, field: event.target.name || 'pin-display' });
+	void submitAuthFormElement(form, formId);
 }
 
 export function bindAuthFormDebug(form: HTMLFormElement | null, formId: string) {
@@ -97,65 +162,18 @@ export function bindAuthFormDebug(form: HTMLFormElement | null, formId: string) 
 
 	form.noValidate = true;
 
-	let bypassPending = false;
-
-	const onInvalid = (event: Event) => {
-		event.preventDefault();
-
-		const target = event.target;
-		if (!(target instanceof HTMLInputElement)) return;
-
-		const isPin = target.name === 'pin' || target.name === 'confirmPin';
-
-		authDebug('browser-validation-blocked', {
-			formId,
-			field: target.name,
-			inputType: target.type,
-			validationMessage: target.validationMessage,
-			valueLength: target.value.length,
-			required: target.required,
-			pattern: target.pattern || null,
-			maxLength: target.maxLength,
-			inputMode: target.inputMode || null,
-			willValidate: target.willValidate,
-			...(isPin ? { pin: analyzePinValue(target.value) } : {})
-		});
-
-		if (bypassPending) return;
-		bypassPending = true;
-		queueMicrotask(() => {
-			bypassPending = false;
-			submitAuthFormElement(form, formId);
-		});
-	};
-
-	const onSubmit = (event: Event) => {
-		const formData = new FormData(form);
-		authDebug('form-submit-event', {
-			formId,
-			defaultPrevented: event.defaultPrevented,
-			submitterType:
-				event instanceof SubmitEvent
-					? ((event.submitter as HTMLButtonElement | null)?.type ?? null)
-					: null,
-			email: maskEmail(String(formData.get('email') ?? '')),
-			pin: analyzePinValue(String(formData.get('pin') ?? '')),
-			confirmPin: analyzePinValue(String(formData.get('confirmPin') ?? ''))
-		});
-	};
-
-	form.addEventListener('invalid', onInvalid, true);
-	form.addEventListener('submit', onSubmit);
+	for (const input of form.querySelectorAll('input, select, textarea')) {
+		if (input instanceof HTMLInputElement || input instanceof HTMLSelectElement) {
+			input.addEventListener('invalid', (event) => event.preventDefault());
+		}
+	}
 
 	authDebug('form-attached', {
 		formId,
-		action: form.action,
+		action: form.getAttribute('action') ?? form.action,
 		method: form.method,
 		noValidate: form.noValidate
 	});
 
-	return () => {
-		form.removeEventListener('invalid', onInvalid, true);
-		form.removeEventListener('submit', onSubmit);
-	};
+	return () => {};
 }

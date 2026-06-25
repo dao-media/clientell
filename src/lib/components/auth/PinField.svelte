@@ -6,77 +6,71 @@
 		id,
 		name,
 		value = $bindable(''),
-		autocomplete = 'off' as HTMLInputElement['autocomplete'],
 		class: className = ''
 	}: {
 		id: string;
 		name: string;
 		value?: string;
-		autocomplete?: HTMLInputElement['autocomplete'];
 		class?: string;
 	} = $props();
 
-	function syncInput(input: HTMLInputElement, source: string) {
-		const before = analyzePinValue(input.value);
-		const normalized = normalizePinInput(input.value);
-		if (normalized !== input.value) {
-			input.value = normalized;
-		}
+	let display = $state('');
+	let hiddenInput = $state<HTMLInputElement | null>(null);
+
+	function syncPin(raw: string, source: string) {
+		const normalized = normalizePinInput(raw);
+		display = normalized;
 		value = normalized;
+		if (hiddenInput) {
+			hiddenInput.value = normalized;
+		}
 		authDebug('pin-field-sync', {
 			id,
 			name,
 			source,
-			before,
-			after: analyzePinValue(normalized),
-			validationMessage: input.validationMessage || null,
-			willValidate: input.willValidate
+			before: analyzePinValue(raw),
+			after: analyzePinValue(normalized)
 		});
 	}
 
+	$effect(() => {
+		if (value !== display) {
+			syncPin(value, 'external');
+		}
+	});
+
 	function onInput(event: Event) {
-		syncInput(event.currentTarget as HTMLInputElement, 'input');
+		syncPin((event.currentTarget as HTMLInputElement).value, 'input');
 	}
 
 	function onPaste(event: ClipboardEvent) {
 		event.preventDefault();
-		const input = event.currentTarget as HTMLInputElement;
 		const pasted = event.clipboardData?.getData('text') ?? '';
 		authDebug('pin-field-paste', { id, name, pasted: analyzePinValue(pasted) });
-		input.value = normalizePinInput(pasted);
-		value = input.value;
-		syncInput(input, 'paste');
+		syncPin(pasted, 'paste');
 	}
 
 	function onInvalid(event: Event) {
 		event.preventDefault();
-		const input = event.currentTarget as HTMLInputElement;
-		authDebug('pin-field-invalid', {
-			id,
-			name,
-			validationMessage: input.validationMessage,
-			value: analyzePinValue(input.value),
-			required: input.required,
-			pattern: input.pattern || null,
-			maxLength: input.maxLength
-		});
-		syncInput(input, 'invalid');
 	}
 </script>
+
+<!-- Hidden field carries the POST value; visible field is display-only (no name = no browser format checks). -->
+<input type="hidden" {name} bind:this={hiddenInput} value={value} />
 
 <input
 	class="field font-mono tracking-[0.3em] {className}"
 	{id}
-	{name}
 	type="text"
-	{autocomplete}
-	enterkeyhint="done"
+	autocomplete="off"
 	autocapitalize="off"
 	autocorrect="off"
 	spellcheck="false"
-	bind:value
+	enterkeyhint="done"
+	maxlength={6}
+	data-auth-pin="true"
+	value={display}
 	oninput={onInput}
 	onpaste={onPaste}
-	onchange={(event) => syncInput(event.currentTarget as HTMLInputElement, 'change')}
 	oninvalid={onInvalid}
 />

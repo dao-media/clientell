@@ -33,12 +33,12 @@
 	>
 		<div>
 			<label class="label" for="pin">New 6-digit PIN</label>
-			<PinField id="pin" name="pin" autocomplete="new-password" />
+			<PinField id="pin" name="pin" />
 		</div>
 
 		<div>
 			<label class="label" for="confirmPin">Confirm PIN</label>
-			<PinField id="confirmPin" name="confirmPin" autocomplete="new-password" />
+			<PinField id="confirmPin" name="confirmPin" />
 		</div>
 
 		{#if form?.error}

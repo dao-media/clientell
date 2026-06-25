@@ -54,7 +54,7 @@
 					id="email"
 					name="email"
 					type="text"
-					autocomplete="username"
+					autocomplete="off"
 					spellcheck="false"
 				/>
 			</div>
