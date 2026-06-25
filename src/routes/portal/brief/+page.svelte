@@ -14,6 +14,8 @@
 	import type { ActionData, PageData } from './$types';
 	import '$lib/styles/client-brief.css';
 
+	const AUTOSAVE_DELAY_MS = 30_000;
+
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	let answers = $state<Record<string, unknown>>({});
@@ -23,6 +25,9 @@
 	let submitting = $state(false);
 	let submitSuccess = $state(false);
 	let actionError = $state('');
+	let lastInputAt = $state<number | null>(null);
+	let autosaveCountdown = $state<number | null>(null);
+	let autosaveScheduled = $state(false);
 
 	const questions = $derived(data.questions);
 	const readOnly = $derived(!data.editable);
@@ -31,6 +36,7 @@
 	const isFirstStep = $derived(step === 0);
 	const isLastQuestionStep = $derived(step === questions.length - 1);
 	const isBusy = $derived(saveState === 'saving' || submitting);
+	const autosaveActive = $derived(!readOnly && !onReview && questions.length > 0 && stepReady);
 
 	const briefLead = $derived(
 		[
@@ -75,11 +81,59 @@
 		step = firstUnanswered === -1 ? questions.length : firstUnanswered;
 	});
 
+	function clearAutosaveSchedule() {
+		lastInputAt = null;
+		autosaveCountdown = null;
+		autosaveScheduled = false;
+	}
+
+	function noteClientInput() {
+		if (!autosaveActive || isBusy) return;
+		saveState = 'idle';
+		lastInputAt = Date.now();
+		autosaveScheduled = true;
+	}
+
+	$effect(() => {
+		if (!autosaveActive || !autosaveScheduled || lastInputAt === null) {
+			if (!autosaveScheduled) autosaveCountdown = null;
+			return;
+		}
+
+		const tick = () => {
+			if (lastInputAt === null) return;
+
+			const remainingMs = AUTOSAVE_DELAY_MS - (Date.now() - lastInputAt);
+			if (remainingMs <= 0) {
+				autosaveCountdown = 0;
+				void runAutosave();
+				return;
+			}
+
+			autosaveCountdown = Math.ceil(remainingMs / 1000);
+		};
+
+		tick();
+		const id = window.setInterval(tick, 250);
+		return () => window.clearInterval(id);
+	});
+
+	async function runAutosave() {
+		if (!autosaveScheduled || isBusy || readOnly || onReview) return;
+		autosaveScheduled = false;
+		lastInputAt = null;
+		autosaveCountdown = null;
+		await saveBrief(true, 'autosave');
+	}
+
 	function setError(message: string) {
 		actionError = message;
 	}
 
-	async function saveBrief(partial = true): Promise<boolean> {
+	async function saveBrief(
+		partial = true,
+		source: 'manual' | 'autosave' = 'manual'
+	): Promise<boolean> {
 		if (readOnly || questions.length === 0) return true;
 
 		saveState = 'saving';
@@ -91,10 +145,17 @@
 
 		if (result.type === 'success') {
 			saveState = 'saved';
+			clearAutosaveSchedule();
 			return true;
 		}
 
 		saveState = 'error';
+		if (source === 'autosave') {
+			lastInputAt = Date.now();
+			autosaveScheduled = true;
+		} else {
+			clearAutosaveSchedule();
+		}
 		setError(
 			result.type === 'failure' && typeof result.data?.error === 'string'
 				? result.data.error
@@ -214,11 +275,17 @@
 			</header>
 
 			<div class="wizard-question">
-				<QuestionField question={currentQuestion} bind:answers disabled={readOnly} client />
+				<QuestionField
+					question={currentQuestion}
+					bind:answers
+					disabled={readOnly}
+					client
+					onAnswerChange={noteClientInput}
+				/>
 			</div>
 
 			<footer class="wizard-footer">
-				<div class="wizard-status">
+				<div class="wizard-status" aria-live="polite">
 					{#if isBusy}
 						<Spinner size="small" label={submitting ? 'Submitting' : 'Saving'} />
 						<span>{submitting ? 'Submitting…' : 'Saving…'}</span>
@@ -226,6 +293,8 @@
 						<span>Saved</span>
 					{:else if saveState === 'error'}
 						<span class="wizard-status-error">Save failed</span>
+					{:else if autosaveCountdown !== null}
+						<span>Autosave in {autosaveCountdown}s</span>
 					{/if}
 				</div>
 

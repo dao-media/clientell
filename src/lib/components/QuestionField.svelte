@@ -25,17 +25,20 @@
 		answers = $bindable<Record<string, unknown>>({}),
 		disabled = false,
 		preview = false,
-		client = false
+		client = false,
+		onAnswerChange
 	}: {
 		question: Question;
 		answers?: Record<string, unknown>;
 		disabled?: boolean;
 		preview?: boolean;
 		client?: boolean;
+		onAnswerChange?: () => void;
 	} = $props();
 
 	const attachmentKey = $derived(attachmentAnswerKey(question.id));
 	let attachments = $state<AttachmentItem[]>([]);
+	let attachmentsReady = $state(false);
 	let restrictionError = $state('');
 
 	const restrictionHint = $derived(restrictionLabel(question.inputRestriction));
@@ -57,13 +60,19 @@
 			'';
 	}
 
+	function notifyAnswerChange() {
+		onAnswerChange?.();
+	}
+
 	function updateAnswer(value: string) {
 		answers[question.id] = value;
 		validateCurrentAnswer(value);
+		notifyAnswerChange();
 	}
 
 	$effect.pre(() => {
 		attachments = parseAttachments(answers[attachmentKey]);
+		attachmentsReady = false;
 	});
 
 	$effect(() => {
@@ -73,6 +82,11 @@
 		} else {
 			delete answers[attachmentKey];
 		}
+		if (!attachmentsReady) {
+			attachmentsReady = true;
+			return;
+		}
+		notifyAnswerChange();
 	});
 
 	$effect(() => {
@@ -128,6 +142,7 @@
 				checked={answers[question.id] === true}
 				onchange={(event) => {
 					answers[question.id] = (event.currentTarget as HTMLInputElement).checked;
+					notifyAnswerChange();
 				}}
 				{disabled}
 			/>
