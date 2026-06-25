@@ -12,6 +12,7 @@
 	import { isQuestionAnswered } from '$lib/utils';
 	import LogOut from '@lucide/svelte/icons/log-out';
 	import type { ActionData, PageData } from './$types';
+	import '$lib/styles/client-brief.css';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 

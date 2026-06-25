@@ -1,0 +1,60 @@
+/* Client portal brief surfaces — explicit typography for nested Svelte components. */
+
+:is(.brief-wizard, .brief-review) :is(h1, .h1) {
+	font-size: var(--heading-h1-size);
+	font-weight: var(--heading-font-weight);
+	line-height: var(--heading-h1-line-height);
+	color: var(--color-ink);
+}
+
+:is(.brief-wizard, .brief-review) :is(h2, .h2) {
+	font-size: var(--heading-h2-size);
+	font-weight: var(--heading-font-weight);
+	line-height: var(--heading-h2-line-height);
+	color: var(--color-ink);
+}
+
+:is(.brief-wizard, .brief-review) :is(h3, .h3) {
+	font-size: var(--heading-h3-size);
+	font-weight: var(--heading-font-weight);
+	line-height: var(--heading-h3-line-height);
+	color: var(--color-ink);
+}
+
+:is(.brief-wizard, .brief-review) :is(h4, .h4, h4.question-heading, h4.review-question) {
+	margin: 0;
+	font-size: var(--heading-h4-size);
+	font-weight: var(--heading-font-weight);
+	line-height: var(--heading-h4-line-height);
+	color: var(--color-ink);
+}
+
+:is(.brief-wizard, .brief-review) :is(h5, .h5) {
+	font-size: var(--heading-h5-size);
+	font-weight: var(--heading-font-weight);
+	line-height: var(--heading-h5-line-height);
+	color: var(--color-ink);
+}
+
+:is(.brief-wizard, .brief-review) :is(h6, .h6) {
+	font-size: var(--heading-h6-size);
+	font-weight: var(--heading-font-weight);
+	line-height: var(--heading-h6-line-height);
+	color: var(--color-ink);
+}
+
+.brief-wizard .question-field .label {
+	font-size: inherit;
+	font-weight: inherit;
+}
+
+.brief-wizard :is(input.field, textarea.field, select.field) {
+	font-size: var(--field-text-size);
+	line-height: var(--field-line-height);
+}
+
+.brief-review .review-answer {
+	font-size: var(--field-text-size);
+	line-height: var(--field-line-height);
+	color: var(--color-ink);
+}

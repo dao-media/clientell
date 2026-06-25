@@ -146,8 +146,6 @@
 
 	.review-answer {
 		margin-top: 0.5rem;
-		font-size: 0.9375rem;
-		line-height: 1.5;
 		white-space: pre-wrap;
 	}
 
