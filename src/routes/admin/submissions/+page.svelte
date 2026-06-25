@@ -9,5 +9,7 @@
 	view={data.view}
 	submissions={data.submissions}
 	clients={data.clients}
+	briefClients={data.briefClients}
+	serviceOptions={data.serviceOptions}
 	filters={data.filters}
 />

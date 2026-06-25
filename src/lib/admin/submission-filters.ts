@@ -3,7 +3,7 @@ export type SubmissionsView = 'all' | 'unfinished' | 'completed';
 export const SUBMISSION_STATUS_FILTERS = [
 	{ view: 'all' as const, label: 'All', href: '/admin/submissions' },
 	{ view: 'unfinished' as const, label: 'Pending', href: '/admin/submissions/unfinished' },
-	{ view: 'completed' as const, label: 'Submitted', href: '/admin/submissions/completed' }
+	{ view: 'completed' as const, label: 'Complete', href: '/admin/submissions/completed' }
 ] as const;
 
 export function submissionsHrefForView(
@@ -22,8 +22,8 @@ export function submissionsHrefForView(
 
 export function submissionsPageTitle(view: SubmissionsView): string {
 	if (view === 'unfinished') return 'Pending submissions';
-	if (view === 'completed') return 'Submitted submissions';
-	return 'All submissions';
+	if (view === 'completed') return 'Complete briefs';
+	return 'All briefs';
 }
 
 export function submissionNavActive(pathname: string, href: string): boolean {

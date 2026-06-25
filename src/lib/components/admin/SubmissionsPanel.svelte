@@ -2,19 +2,23 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import Btn from '$lib/components/Btn.svelte';
+	import NewBriefModal from '$lib/components/admin/NewBriefModal.svelte';
 	import SubmissionReviewModal from '$lib/components/admin/SubmissionReviewModal.svelte';
 	import Field from '$lib/components/ui/Field.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import PageHeader from '$lib/components/layout/PageHeader.svelte';
 	import PageShell from '$lib/components/layout/PageShell.svelte';
 	import FileText from '@lucide/svelte/icons/file-text';
+	import Plus from '@lucide/svelte/icons/plus';
 	import {
 		SUBMISSION_STATUS_FILTERS,
 		submissionsHrefForView,
 		submissionsPageTitle,
 		type SubmissionsView
 	} from '$lib/admin/submission-filters';
+	import type { QuestionCategory } from '$lib/categories';
 	import type { SubmissionListItem } from '$lib/server/submissions';
+	import type { BriefClientOption } from '$lib/server/submissions-page';
 
 	type Filters = {
 		search: string;
@@ -26,11 +30,15 @@
 	let {
 		submissions,
 		clients,
+		briefClients,
+		serviceOptions,
 		filters,
 		view
 	}: {
 		submissions: SubmissionListItem[];
 		clients: Array<{ id: string; company: string }>;
+		briefClients: BriefClientOption[];
+		serviceOptions: QuestionCategory[];
 		filters: Filters;
 		view: SubmissionsView;
 	} = $props();
@@ -41,6 +49,7 @@
 	let dateTo = $state('');
 	let reviewOpen = $state(false);
 	let reviewAssignmentId = $state<string | null>(null);
+	let newBriefOpen = $state(false);
 
 	$effect(() => {
 		search = filters.search;
@@ -84,7 +93,7 @@
 	}
 
 	function statusLabel(status: SubmissionListItem['status']): string {
-		if (status === 'submitted') return 'Submitted';
+		if (status === 'submitted') return 'Complete';
 		if (status === 'draft') return 'Pending';
 		return 'Not started';
 	}
@@ -99,7 +108,14 @@
 	<PageHeader
 		title={pageTitle}
 		lead="Filter by brief state, search response content, and open a submission to review answers or take action."
-	/>
+	>
+		{#snippet actions()}
+			<Btn onclick={() => (newBriefOpen = true)}>
+				<Plus size={16} aria-hidden="true" />
+				New Brief
+			</Btn>
+		{/snippet}
+	</PageHeader>
 
 	<div class="status-filter" role="tablist" aria-label="Brief state">
 		{#each SUBMISSION_STATUS_FILTERS as option (option.view)}
@@ -239,6 +255,12 @@
 		</div>
 	{/if}
 </PageShell>
+
+<NewBriefModal
+	bind:open={newBriefOpen}
+	{briefClients}
+	{serviceOptions}
+/>
 
 <SubmissionReviewModal
 	bind:open={reviewOpen}
