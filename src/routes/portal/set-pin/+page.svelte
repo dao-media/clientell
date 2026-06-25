@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Btn from '$lib/components/Btn.svelte';
 	import LoginDurationSelect from '$lib/components/auth/LoginDurationSelect.svelte';
+	import PinField from '$lib/components/auth/PinField.svelte';
 	import PageHeader from '$lib/components/layout/PageHeader.svelte';
 	import PageShell from '$lib/components/layout/PageShell.svelte';
 	import type { ActionData } from './$types';
@@ -18,30 +19,12 @@
 	<form method="POST" class="card form-group">
 		<div>
 			<label class="label" for="pin">New 6-digit PIN</label>
-			<input
-				class="field font-mono tracking-[0.3em]"
-				id="pin"
-				name="pin"
-				inputmode="numeric"
-				pattern="[0-9]{6}"
-				maxlength="6"
-				required
-				autocomplete="new-password"
-			/>
+			<PinField id="pin" name="pin" required autocomplete="new-password" />
 		</div>
 
 		<div>
 			<label class="label" for="confirmPin">Confirm PIN</label>
-			<input
-				class="field font-mono tracking-[0.3em]"
-				id="confirmPin"
-				name="confirmPin"
-				inputmode="numeric"
-				pattern="[0-9]{6}"
-				maxlength="6"
-				required
-				autocomplete="new-password"
-			/>
+			<PinField id="confirmPin" name="confirmPin" required autocomplete="new-password" />
 		</div>
 
 		{#if form?.error}

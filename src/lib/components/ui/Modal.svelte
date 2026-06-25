@@ -5,6 +5,9 @@
 		open = $bindable(false),
 		title = '',
 		size = 'default',
+		closeOnBackdrop = true,
+		closeOnEscape = true,
+		beforeClose,
 		children,
 		footer,
 		onclose
@@ -12,25 +15,34 @@
 		open?: boolean;
 		title?: string;
 		size?: 'default' | 'sm';
+		closeOnBackdrop?: boolean;
+		closeOnEscape?: boolean;
+		beforeClose?: () => boolean | Promise<boolean>;
 		children?: Snippet;
 		footer?: Snippet;
 		onclose?: () => void;
 	} = $props();
 
-	function close() {
+	async function close() {
+		if (beforeClose) {
+			const allowed = await beforeClose();
+			if (!allowed) return;
+		}
+
 		open = false;
 		onclose?.();
 	}
 
 	function onBackdropClick(event: MouseEvent) {
-		if (event.target === event.currentTarget) close();
+		if (!closeOnBackdrop) return;
+		if (event.target === event.currentTarget) void close();
 	}
 
 	$effect(() => {
 		if (!open) return;
 
 		function onKeydown(event: KeyboardEvent) {
-			if (event.key === 'Escape') close();
+			if (event.key === 'Escape' && closeOnEscape) void close();
 		}
 
 		window.addEventListener('keydown', onKeydown);
@@ -48,7 +60,9 @@
 		>
 			<header class="modal-header">
 				<h2 id="modal-title">{title}</h2>
-				<button type="button" class="modal-close" aria-label="Close" onclick={close}>×</button>
+				<button type="button" class="modal-close" aria-label="Close" onclick={() => void close()}>
+					×
+				</button>
 			</header>
 			<div class="modal-body">
 				{#if children}

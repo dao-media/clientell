@@ -37,6 +37,18 @@
 	let emailTaken = $state(false);
 	let wasOpen = $state(false);
 
+	const formId = $derived(`add-client-form-${session}`);
+
+	const isDirty = $derived(
+		company.trim() !== '' ||
+			contactName.trim() !== '' ||
+			email.trim() !== '' ||
+			phone.trim() !== '' ||
+			selectedServices.length > 0
+	);
+
+	const closeOnBackdrop = $derived(!isDirty && !saving);
+
 	$effect(() => {
 		const justOpened = open && !wasOpen;
 		wasOpen = open;
@@ -53,114 +65,151 @@
 		saving = false;
 	});
 
-	function handleClose() {
+	function confirmDiscard(): boolean {
+		if (!isDirty || saving) return true;
+		return confirm('Discard this client? Your entries will be lost.');
+	}
+
+	function forceClose() {
 		open = false;
 		onclose?.();
+	}
+
+	function requestClose() {
+		if (!confirmDiscard()) return;
+		forceClose();
 	}
 </script>
 
 {#if open}
 	{#key session}
-		<Modal bind:open title="Add client" size="sm" onclose={handleClose}>
-			<form
-				method="POST"
-				{action}
-				class="client-form"
-				use:enhance={() => {
-					saving = true;
-					error = '';
-					emailTaken = false;
+		<Modal
+			bind:open
+			title="Add client"
+			size="sm"
+			{closeOnBackdrop}
+			beforeClose={confirmDiscard}
+			onclose={() => onclose?.()}
+		>
+			{#snippet children()}
+				<form
+					id={formId}
+					method="POST"
+					{action}
+					class="client-form"
+					use:enhance={() => {
+						saving = true;
+						error = '';
+						emailTaken = false;
 
-					return async ({ result, update }) => {
-						try {
-							if (result.type === 'success') {
-								const savedClients = clientsFromActionData(result.data);
-								if (savedClients) {
-									onclients?.(
-										savedClients.map((client) => ({
-											...client,
-											createdAt: client.createdAt.toISOString()
-										}))
-									);
+						return async ({ result, update }) => {
+							try {
+								if (result.type === 'success') {
+									const savedClients = clientsFromActionData(result.data);
+									if (savedClients) {
+										onclients?.(
+											savedClients.map((client) => ({
+												...client,
+												createdAt: client.createdAt.toISOString()
+											}))
+										);
+									}
+
+									await onsaved?.(result);
+									await update({ reset: false, invalidateAll: false });
+									forceClose();
+									return;
 								}
 
-								await onsaved?.(result);
+								if (result.type === 'failure') {
+									const data = result.data ?? {};
+									error =
+										typeof data.clientError === 'string'
+											? data.clientError
+											: 'Could not save client.';
+									emailTaken = Boolean(data.emailTaken);
+								} else if (result.type === 'error') {
+									error = 'Could not save client.';
+								}
+
 								await update({ reset: false, invalidateAll: false });
-								handleClose();
-								return;
+							} finally {
+								saving = false;
 							}
-
-							if (result.type === 'failure') {
-								const data = result.data ?? {};
-								error =
-									typeof data.clientError === 'string'
-										? data.clientError
-										: 'Could not save client.';
-								emailTaken = Boolean(data.emailTaken);
-							} else if (result.type === 'error') {
-								error = 'Could not save client.';
-							}
-
-							await update({ reset: false, invalidateAll: false });
-						} finally {
-							saving = false;
-						}
-					};
-				}}
-			>
-				<Field labelText="Company" name="company" bind:value={company} required disabled={saving} />
-				<Field
-					labelText="Point of contact"
-					name="contactName"
-					bind:value={contactName}
-					required
-					disabled={saving}
-				/>
-				<Field labelText="Email" name="email" type="email" bind:value={email} required disabled={saving} />
-				<Field
-					labelText="Phone"
-					name="phone"
-					type="tel"
-					bind:value={phone}
-					helperText="Optional"
-					disabled={saving}
-				/>
-
-				<CategoryTagPicker
-					categories={serviceOptions}
-					bind:selected={selectedServices}
-					name="services"
-					legend="Services"
-					placeholder="Search or select services…"
-					emptyHint="Create categories in Manage Briefs first. Those become the services you can track here."
-					disabled={saving}
-				/>
-				<p class="services-help">Track the services this client has requested so far.</p>
-
-				{#if error}
-					<Alert
-						variant="error"
-						title={emailTaken ? 'Email already in use' : 'Could not save client'}
-						subtitle={error}
+						};
+					}}
+				>
+					<Field
+						labelText="Company"
+						name="company"
+						bind:value={company}
+						required
+						disabled={saving}
 					/>
-					{#if emailTaken}
-						<div class="email-taken-actions">
-							<Btn variant="secondary" href="/portal">Sign in to portal</Btn>
-							<Btn variant="ghost" href="/portal/forgot-pin">Forgot PIN</Btn>
-						</div>
-					{/if}
-				{/if}
+					<Field
+						labelText="Point of contact"
+						name="contactName"
+						bind:value={contactName}
+						required
+						disabled={saving}
+					/>
+					<Field
+						labelText="Email"
+						name="email"
+						type="email"
+						bind:value={email}
+						required
+						disabled={saving}
+					/>
+					<Field
+						labelText="Phone"
+						name="phone"
+						type="tel"
+						bind:value={phone}
+						helperText="Optional"
+						disabled={saving}
+					/>
 
+					<CategoryTagPicker
+						categories={serviceOptions}
+						bind:selected={selectedServices}
+						name="services"
+						legend="Services"
+						placeholder="Search or select services…"
+						emptyHint="Create categories in Manage Briefs first. Those become the services you can track here."
+						disabled={saving}
+					/>
+					<p class="services-help">Track the services this client has requested so far.</p>
+
+					{#if error}
+						<Alert
+							variant="error"
+							title={emailTaken ? 'Email already in use' : 'Could not save client'}
+							subtitle={error}
+						/>
+						{#if emailTaken}
+							<div class="email-taken-actions">
+								<Btn variant="secondary" href="/portal">Sign in to portal</Btn>
+								<Btn variant="ghost" href="/portal/forgot-pin">Forgot PIN</Btn>
+							</div>
+						{/if}
+					{/if}
+				</form>
+			{/snippet}
+
+			{#snippet footer()}
 				<div class="modal-actions">
-					<Btn variant="secondary" type="button" disabled={saving} onclick={handleClose}>Cancel</Btn>
-					<Btn type="submit" disabled={saving}>
+					<Btn variant="secondary" type="button" disabled={saving} onclick={requestClose}>
+						Cancel
+					</Btn>
+					<Btn type="submit" form={formId} disabled={saving}>
 						{#if saving}
 							<Spinner size="small" label="Saving client" />
 						{/if}
 						Save client
 					</Btn>
 				</div>
-			</form>
+			{/snippet}
 		</Modal>
 	{/key}
 {/if}
@@ -182,9 +231,7 @@
 		justify-content: flex-end;
 		gap: 0.75rem;
 		flex-wrap: wrap;
-		padding-top: 0.5rem;
-		border-top: 1px solid var(--color-border);
-		margin-top: 0.5rem;
+		width: 100%;
 	}
 
 	.modal-actions :global(.btn) {

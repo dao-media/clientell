@@ -7,6 +7,7 @@ import { loginDurationFromForm, type LoginDuration } from '$lib/server/auth/logi
 import type { Database } from '$lib/server/db';
 import { assignments, clients } from '$lib/server/db/schema';
 import { normalizeEmail } from '$lib/utils';
+import { isValidPin, normalizePinInput } from '$lib/utils/pin';
 
 export async function authenticateClientPortalLogin(
 	db: Database,
@@ -66,9 +67,9 @@ export async function clientPortalLoginFromForm(
 	request?: Request
 ) {
 	const email = normalizeEmail(String(data.get('email') ?? ''));
-	const pin = String(data.get('pin') ?? '').trim();
+	const pin = normalizePinInput(String(data.get('pin') ?? ''));
 
-	if (!email || !/^\d{6}$/.test(pin)) {
+	if (!email || !isValidPin(pin)) {
 		return fail(400, { error: 'Enter a valid email and 6-digit PIN.' });
 	}
 

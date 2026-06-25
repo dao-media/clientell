@@ -81,9 +81,23 @@
 	}
 
 	function onDocumentPointerDown(event: PointerEvent) {
-		if (!rootEl?.contains(event.target as Node)) {
+		if (rootEl?.contains(event.target as Node)) return;
+
+		const target = event.target;
+		const defer =
+			target instanceof Element &&
+			Boolean(target.closest('button, a, label, input, textarea, select, [role="dialog"]'));
+
+		const closePanel = () => {
 			focused = false;
+		};
+
+		if (defer) {
+			queueMicrotask(closePanel);
+			return;
 		}
+
+		closePanel();
 	}
 
 	$effect(() => {
@@ -192,6 +206,7 @@
 	}
 
 	.picker-field {
+		position: relative;
 		border: 1px solid var(--color-border);
 		background: var(--color-surface);
 		transition: border-color 120ms ease;
@@ -294,9 +309,16 @@
 	}
 
 	.suggestions-panel {
-		border-top: 1px solid var(--color-border);
+		position: absolute;
+		top: calc(100% + 0.25rem);
+		left: 0;
+		right: 0;
+		z-index: 20;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
 		background: var(--color-surface);
 		padding: 0.35rem;
+		box-shadow: 0 10px 24px rgb(15 23 42 / 0.12);
 		max-height: 14rem;
 		overflow-y: auto;
 	}

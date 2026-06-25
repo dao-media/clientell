@@ -6,6 +6,7 @@ import { loginDurationFromForm } from '$lib/server/auth/login-duration';
 import { redirectClientIfPinChangeRequired } from '$lib/server/auth/portal-login';
 import { setClientSession } from '$lib/server/auth/session';
 import { assignments } from '$lib/server/db/schema';
+import { isValidPin, normalizePinInput } from '$lib/utils/pin';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -26,10 +27,10 @@ export const actions: Actions = {
 	default: async ({ request, locals, cookies, url }) => {
 		const session = requireClient(locals);
 		const data = await request.formData();
-		const pin = String(data.get('pin') ?? '').trim();
-		const confirmPin = String(data.get('confirmPin') ?? '').trim();
+		const pin = normalizePinInput(String(data.get('pin') ?? ''));
+		const confirmPin = normalizePinInput(String(data.get('confirmPin') ?? ''));
 
-		if (!/^\d{6}$/.test(pin)) {
+		if (!isValidPin(pin)) {
 			return fail(400, { error: 'Choose a 6-digit PIN.' });
 		}
 

@@ -2,6 +2,7 @@
 	import Btn from '$lib/components/Btn.svelte';
 	import ForgotPinLink from '$lib/components/auth/ForgotPinLink.svelte';
 	import LoginDurationSelect from '$lib/components/auth/LoginDurationSelect.svelte';
+	import PinField from '$lib/components/auth/PinField.svelte';
 	import LogIn from '@lucide/svelte/icons/log-in';
 	import PageShell from '$lib/components/layout/PageShell.svelte';
 	import type { ActionData } from './$types';
@@ -28,15 +29,7 @@
 			</div>
 			<div>
 				<label class="label" for="pin">6-digit PIN</label>
-				<input
-					class="field font-mono tracking-[0.3em]"
-					id="pin"
-					name="pin"
-					inputmode="numeric"
-					pattern="[0-9]{6}"
-					maxlength="6"
-					required
-				/>
+				<PinField id="pin" name="pin" required />
 			</div>
 
 			{#if form?.error}

@@ -2,6 +2,7 @@
 	import Btn from '$lib/components/Btn.svelte';
 	import ForgotPinLink from '$lib/components/auth/ForgotPinLink.svelte';
 	import LoginDurationSelect from '$lib/components/auth/LoginDurationSelect.svelte';
+	import PinField from '$lib/components/auth/PinField.svelte';
 	import Field from '$lib/components/ui/Field.svelte';
 	import PageHeader from '$lib/components/layout/PageHeader.svelte';
 	import PageShell from '$lib/components/layout/PageShell.svelte';
@@ -137,15 +138,7 @@
 						</div>
 						<div>
 							<label class="label" for="home-portal-pin">6-digit PIN</label>
-							<input
-								class="field font-mono tracking-[0.3em]"
-								id="home-portal-pin"
-								name="pin"
-								inputmode="numeric"
-								pattern="[0-9]{6}"
-								maxlength="6"
-								required
-							/>
+							<PinField id="home-portal-pin" name="pin" required />
 						</div>
 
 						{#if form?.portalError}
