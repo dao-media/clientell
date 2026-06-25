@@ -136,6 +136,10 @@
 
 	.review-question {
 		margin: 0;
+		font-size: var(--heading-h5-size);
+		font-weight: var(--heading-font-weight);
+		line-height: var(--heading-h5-line-height);
+		color: var(--color-ink);
 	}
 
 	.review-help {
@@ -147,6 +151,9 @@
 	.review-answer {
 		margin-top: 0.5rem;
 		white-space: pre-wrap;
+		font-size: 18px;
+		line-height: 1.5;
+		color: var(--color-ink);
 	}
 
 	.review-attachments {

@@ -111,6 +111,7 @@
 			}}
 			{disabled}
 			required={nativeRequired}
+			aria-labelledby={client ? `${question.id}-label` : undefined}
 			aria-invalid={restrictionError ? 'true' : undefined}
 			aria-describedby={restrictionError ? `${question.id}-restriction-error` : undefined}
 		></textarea>
@@ -126,6 +127,7 @@
 			}}
 			{disabled}
 			required={nativeRequired}
+			aria-labelledby={client ? `${question.id}-label` : undefined}
 		>
 			<option value="">Select an option</option>
 			{#each question.options ?? [] as option (option)}
@@ -169,6 +171,7 @@
 			}}
 			{disabled}
 			required={nativeRequired}
+			aria-labelledby={client ? `${question.id}-label` : undefined}
 			aria-invalid={restrictionError ? 'true' : undefined}
 			aria-describedby={restrictionError ? `${question.id}-restriction-error` : undefined}
 		/>
@@ -176,17 +179,19 @@
 {/snippet}
 
 <div class="question-field" class:question-field--client={client}>
-	<label class="label" for={question.id}>
-		{#if client}
-			<h5 class="question-heading">
+	{#if client}
+		<div class="question-label">
+			<h5 id="{question.id}-label" class="question-heading">
 				{question.label}
 				{#if question.required}<span class="text-red-500">*</span>{/if}
 			</h5>
-		{:else}
+		</div>
+	{:else}
+		<label class="label" for={question.id}>
 			{question.label}
 			{#if question.required}<span class="text-red-500">*</span>{/if}
-		{/if}
-	</label>
+		</label>
+	{/if}
 
 	{#if splitWithUpload}
 		<div class="answer-split">
@@ -234,14 +239,22 @@
 		gap: 0.5rem;
 	}
 
-	.question-field--client .label {
+	.question-field--client .question-label {
 		display: block;
-		font-size: inherit;
-		font-weight: inherit;
 	}
 
 	.question-field--client .question-heading {
 		margin: 0;
+		font-size: var(--heading-h5-size);
+		font-weight: var(--heading-font-weight);
+		line-height: var(--heading-h5-line-height);
+		color: var(--color-ink);
+	}
+
+	.question-field--client :global(.field),
+	.question-field--client :global(.client-brief-answer) {
+		font-size: 18px !important;
+		line-height: 1.5 !important;
 	}
 
 	.answer-split {
