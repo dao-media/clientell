@@ -1,13 +1,20 @@
 <script lang="ts">
 	import Btn from '$lib/components/Btn.svelte';
+	import AuthDebugPanel from '$lib/components/auth/AuthDebugPanel.svelte';
 	import LoginDurationSelect from '$lib/components/auth/LoginDurationSelect.svelte';
 	import PinField from '$lib/components/auth/PinField.svelte';
 	import PageHeader from '$lib/components/layout/PageHeader.svelte';
 	import PageShell from '$lib/components/layout/PageShell.svelte';
 	import type { ActionData } from './$types';
-	import { prepareAuthFormForSubmit } from '$lib/utils/auth-form';
+	import { bindAuthFormDebug, submitAuthForm } from '$lib/utils/auth-form';
 
 	let { form }: { form: ActionData } = $props();
+
+	let formEl = $state<HTMLFormElement | null>(null);
+
+	$effect(() => {
+		return bindAuthFormDebug(formEl, 'set-pin');
+	});
 </script>
 
 <PageShell width="form">
@@ -18,19 +25,20 @@
 	/>
 
 	<form
+		bind:this={formEl}
 		method="POST"
 		class="card form-group"
 		novalidate
-		onsubmit={(event) => prepareAuthFormForSubmit(event.currentTarget)}
+		onsubmit={(event) => submitAuthForm(event, 'set-pin')}
 	>
 		<div>
 			<label class="label" for="pin">New 6-digit PIN</label>
-			<PinField id="pin" name="pin" required autocomplete="new-password" />
+			<PinField id="pin" name="pin" autocomplete="new-password" />
 		</div>
 
 		<div>
 			<label class="label" for="confirmPin">Confirm PIN</label>
-			<PinField id="confirmPin" name="confirmPin" required autocomplete="new-password" />
+			<PinField id="confirmPin" name="confirmPin" autocomplete="new-password" />
 		</div>
 
 		{#if form?.error}
@@ -43,4 +51,6 @@
 			<Btn type="submit">Save PIN and continue</Btn>
 		</div>
 	</form>
+
+	<AuthDebugPanel serverDebug={form?.authDebug} />
 </PageShell>

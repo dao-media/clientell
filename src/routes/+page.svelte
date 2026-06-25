@@ -9,11 +9,22 @@
 	import ArrowRight from '@lucide/svelte/icons/arrow-right';
 	import LogIn from '@lucide/svelte/icons/log-in';
 	import type { ActionData } from './$types';
-	import { prepareAuthFormForSubmit, submitAuthFormOnEnter } from '$lib/utils/auth-form';
+	import { bindAuthFormDebug, submitAuthForm, submitAuthFormOnEnter } from '$lib/utils/auth-form';
+	import AuthDebugPanel from '$lib/components/auth/AuthDebugPanel.svelte';
 
 	let { form }: { form: ActionData } = $props();
 
 	let expanded = $state<'admin' | 'portal' | null>(null);
+	let portalFormEl = $state<HTMLFormElement | null>(null);
+	let adminFormEl = $state<HTMLFormElement | null>(null);
+
+	$effect(() => {
+		return bindAuthFormDebug(portalFormEl, 'home-portal-sign-in');
+	});
+
+	$effect(() => {
+		return bindAuthFormDebug(adminFormEl, 'home-admin-sign-in');
+	});
 
 	function expandPanel(panel: 'admin' | 'portal') {
 		expanded = panel;
@@ -52,12 +63,14 @@
 					<p class="home-tile-desc">Use your Briefly admin password.</p>
 
 					<form
+						bind:this={adminFormEl}
 						method="POST"
 						action="?/adminLogin"
 						class="form-group home-login-form"
 						novalidate
-						onsubmit={(event) => prepareAuthFormForSubmit(event.currentTarget)}
-						onkeydown={submitAuthFormOnEnter}
+						onsubmit={(event) => submitAuthForm(event, 'home-admin-sign-in')}
+						onkeydown={(event) =>
+							submitAuthFormOnEnter(event, { formId: 'home-admin-sign-in' })}
 					>
 						<Field
 							labelText="Password"
@@ -99,12 +112,17 @@
 					</p>
 
 					<form
+						bind:this={portalFormEl}
 						method="POST"
 						action="?/portalLogin"
 						class="form-group home-login-form"
 						novalidate
-						onsubmit={(event) => prepareAuthFormForSubmit(event.currentTarget)}
-						onkeydown={(event) => submitAuthFormOnEnter(event, { focusPinOnEmail: true })}
+						onsubmit={(event) => submitAuthForm(event, 'home-portal-sign-in')}
+						onkeydown={(event) =>
+							submitAuthFormOnEnter(event, {
+								focusPinOnEmail: true,
+								formId: 'home-portal-sign-in'
+							})}
 					>
 						<div>
 							<label class="label" for="home-portal-email">Email</label>
@@ -116,12 +134,11 @@
 								inputmode="email"
 								autocomplete="email"
 								spellcheck="false"
-								required
 							/>
 						</div>
 						<div>
 							<label class="label" for="home-portal-pin">6-digit PIN</label>
-							<PinField id="home-portal-pin" name="pin" required />
+							<PinField id="home-portal-pin" name="pin" />
 						</div>
 
 						{#if form?.portalError}
@@ -152,6 +169,8 @@
 			{/if}
 		</div>
 	</div>
+
+	<AuthDebugPanel serverDebug={form?.authDebug} />
 </PageShell>
 
 <style>

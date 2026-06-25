@@ -1,10 +1,36 @@
 <script lang="ts">
 	import Btn from '$lib/components/Btn.svelte';
+	import AuthDebugPanel from '$lib/components/auth/AuthDebugPanel.svelte';
 	import Alert from '$lib/components/ui/Alert.svelte';
 	import PageShell from '$lib/components/layout/PageShell.svelte';
 	import type { ActionData } from './$types';
+	import { authDebug, maskEmail } from '$lib/debug/auth-debug';
+	import { bindAuthFormDebug, submitAuthForm } from '$lib/utils/auth-form';
+	import { normalizeEmail } from '$lib/utils';
 
 	let { form }: { form: ActionData } = $props();
+
+	let formEl = $state<HTMLFormElement | null>(null);
+
+	$effect(() => {
+		return bindAuthFormDebug(formEl, 'forgot-pin');
+	});
+
+	function onSubmit(event: SubmitEvent) {
+		const formElement = event.currentTarget;
+		if (formElement instanceof HTMLFormElement) {
+			const email = formElement.querySelector<HTMLInputElement>('input[name="email"]');
+			if (email) {
+				const raw = email.value;
+				email.value = normalizeEmail(raw);
+				authDebug('forgot-pin-email-normalized', {
+					before: maskEmail(raw),
+					after: maskEmail(email.value)
+				});
+			}
+		}
+		submitAuthForm(event, 'forgot-pin');
+	}
 </script>
 
 <PageShell width="auth" center>
@@ -19,16 +45,17 @@
 			<Alert variant="success" title="Check your email" subtitle={form.message} />
 		{/if}
 
-		<form method="POST" class="form-group">
+		<form bind:this={formEl} method="POST" class="form-group" novalidate onsubmit={onSubmit}>
 			<div>
 				<label class="label" for="email">Email</label>
 				<input
 					class="field"
 					id="email"
 					name="email"
-					type="email"
+					type="text"
+					inputmode="email"
 					autocomplete="email"
-					required
+					spellcheck="false"
 				/>
 			</div>
 
@@ -41,6 +68,8 @@
 				<Btn class="w-full" variant="secondary" href="/portal">Back to sign in</Btn>
 			</div>
 		</form>
+
+		<AuthDebugPanel />
 	</div>
 </PageShell>
 

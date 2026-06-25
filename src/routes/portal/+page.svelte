@@ -1,14 +1,21 @@
 <script lang="ts">
 	import Btn from '$lib/components/Btn.svelte';
+	import AuthDebugPanel from '$lib/components/auth/AuthDebugPanel.svelte';
 	import ForgotPinLink from '$lib/components/auth/ForgotPinLink.svelte';
 	import LoginDurationSelect from '$lib/components/auth/LoginDurationSelect.svelte';
 	import PinField from '$lib/components/auth/PinField.svelte';
 	import LogIn from '@lucide/svelte/icons/log-in';
 	import PageShell from '$lib/components/layout/PageShell.svelte';
 	import type { ActionData } from './$types';
-	import { prepareAuthFormForSubmit, submitAuthFormOnEnter } from '$lib/utils/auth-form';
+	import { bindAuthFormDebug, submitAuthForm, submitAuthFormOnEnter } from '$lib/utils/auth-form';
 
 	let { form }: { form: ActionData } = $props();
+
+	let formEl = $state<HTMLFormElement | null>(null);
+
+	$effect(() => {
+		return bindAuthFormDebug(formEl, 'portal-sign-in');
+	});
 </script>
 
 <PageShell width="auth" center>
@@ -19,11 +26,13 @@
 		</p>
 
 		<form
+			bind:this={formEl}
 			method="POST"
 			class="form-group"
 			novalidate
-			onsubmit={(event) => prepareAuthFormForSubmit(event.currentTarget)}
-			onkeydown={(event) => submitAuthFormOnEnter(event, { focusPinOnEmail: true })}
+			onsubmit={(event) => submitAuthForm(event, 'portal-sign-in')}
+			onkeydown={(event) =>
+				submitAuthFormOnEnter(event, { focusPinOnEmail: true, formId: 'portal-sign-in' })}
 		>
 			<div>
 				<label class="label" for="email">Email</label>
@@ -35,12 +44,11 @@
 					inputmode="email"
 					autocomplete="email"
 					spellcheck="false"
-					required
 				/>
 			</div>
 			<div>
 				<label class="label" for="pin">6-digit PIN</label>
-				<PinField id="pin" name="pin" required />
+				<PinField id="pin" name="pin" />
 			</div>
 
 			{#if form?.error}
@@ -57,6 +65,8 @@
 				<Btn class="w-full" type="submit" icon={LogIn}>Continue</Btn>
 			</div>
 		</form>
+
+		<AuthDebugPanel serverDebug={form?.authDebug} />
 	</div>
 </PageShell>
 

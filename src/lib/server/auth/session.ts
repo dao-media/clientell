@@ -1,4 +1,5 @@
 import { env } from '$env/dynamic/private';
+import { authDebug } from '$lib/debug/auth-debug';
 import type { LoginDuration } from '$lib/server/auth/login-duration';
 import { sessionCookieMaxAge, sessionDurationSeconds } from '$lib/server/auth/login-duration';
 
@@ -114,6 +115,7 @@ export async function setAdminSession(
 		token,
 		sessionCookieOptions(sessionCookieMaxAge(duration), isSecureRequest(url, request))
 	);
+	authDebug('admin-session-set', { duration, secure: isSecureRequest(url, request) });
 }
 
 export async function setClientSession(
@@ -134,4 +136,9 @@ export async function setClientSession(
 		token,
 		sessionCookieOptions(sessionCookieMaxAge(duration), isSecureRequest(url, request))
 	);
+	authDebug('client-session-set', {
+		assignmentId,
+		duration,
+		secure: isSecureRequest(url, request)
+	});
 }
