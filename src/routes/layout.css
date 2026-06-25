@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import '$lib/styles/radius.css';
+@import '$lib/styles/typography.css';
 
 @theme {
 	--font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
@@ -140,15 +141,13 @@
 		flex-wrap: wrap;
 	}
 
-	.page-header-text h1 {
-		font-size: clamp(1.5rem, 3vw, 1.75rem);
-		font-weight: 600;
-		line-height: 1.25;
-	}
-
 	.page-header-text {
 		min-width: 0;
 		flex: 1 1 16rem;
+	}
+
+	.page-header-text :is(h1, h2, h3, h4, h5, h6) {
+		margin: 0;
 	}
 
 	.page-kicker {
@@ -221,8 +220,7 @@
 	}
 
 	.section-header h2 {
-		font-size: 1.125rem;
-		font-weight: 600;
+		margin: 0;
 	}
 
 	.stat-label {
@@ -296,7 +294,9 @@
 	}
 
 	.field {
-		@apply w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5 text-sm text-[var(--color-ink)] outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-soft)];
+		@apply w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5 text-[var(--color-ink)] outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-soft)];
+		font-size: var(--field-text-size);
+		line-height: var(--field-line-height);
 	}
 
 	.field-invalid {

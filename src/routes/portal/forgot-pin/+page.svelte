@@ -80,11 +80,6 @@
 		width: 100%;
 	}
 
-	h1 {
-		font-size: 1.5rem;
-		font-weight: 600;
-	}
-
 	.auth-lead {
 		margin: 0.5rem 0 1.25rem;
 		color: var(--color-muted);

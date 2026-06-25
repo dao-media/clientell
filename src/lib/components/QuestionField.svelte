@@ -224,15 +224,6 @@
 
 	.question-field--client .question-heading {
 		margin: 0;
-		font-size: 1.125rem;
-		font-weight: 600;
-		line-height: 1.4;
-		color: var(--color-ink);
-	}
-
-	.question-field--client :global(.field) {
-		font-size: 18px;
-		line-height: 1.5;
 	}
 
 	.answer-split {

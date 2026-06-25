@@ -136,9 +136,6 @@
 
 	.review-question {
 		margin: 0;
-		font-size: 1.125rem;
-		font-weight: 600;
-		line-height: 1.4;
 	}
 
 	.review-help {
