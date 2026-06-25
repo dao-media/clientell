@@ -13,6 +13,7 @@
 		open = $bindable(false),
 		session = 0,
 		serviceOptions = [],
+		action = '/admin/clients?/saveClient',
 		onclients,
 		onsaved,
 		onclose
@@ -20,6 +21,7 @@
 		open?: boolean;
 		session?: number;
 		serviceOptions?: QuestionCategory[];
+		action?: string;
 		onclients?: (clients: ClientListRow[]) => void;
 		onsaved?: (result: import('@sveltejs/kit').ActionResult) => void | Promise<void>;
 		onclose?: () => void;
@@ -62,7 +64,7 @@
 		<Modal bind:open title="Add client" size="sm" onclose={handleClose}>
 			<form
 				method="POST"
-				action="?/saveClient"
+				{action}
 				class="client-form"
 				use:enhance={() => {
 					saving = true;

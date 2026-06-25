@@ -1,6 +1,5 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { createBriefAssignment } from '$lib/server/brief-create';
-import { saveClientFromForm } from '$lib/server/save-client-action';
 import type { Actions } from '@sveltejs/kit';
 
 export const submissionBriefActions = {
@@ -12,7 +11,5 @@ export const submissionBriefActions = {
 		}
 
 		throw redirect(303, `/admin/submissions/${result.assignmentId}`);
-	},
-
-	saveClient: saveClientFromForm
+	}
 } satisfies Actions;

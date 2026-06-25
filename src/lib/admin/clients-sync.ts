@@ -24,6 +24,9 @@ export async function reloadClientsPageData() {
 		invalidate(adminDataKeys.clients),
 		invalidate(adminDataKeys.dashboard),
 		invalidate('/admin/clients'),
-		invalidate('/admin/briefs/new')
+		invalidate('/admin/briefs/new'),
+		invalidate('/admin/submissions'),
+		invalidate('/admin/submissions/unfinished'),
+		invalidate('/admin/submissions/completed')
 	]);
 }

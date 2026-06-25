@@ -183,7 +183,7 @@
 			formData.append('services', serviceId);
 		}
 
-		const response = await fetch('?/saveClient', { method: 'POST', body: formData });
+		const response = await fetch('/admin/clients?/saveClient', { method: 'POST', body: formData });
 		const result = deserialize(await response.text());
 
 		if (result.type === 'success') {

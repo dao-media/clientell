@@ -53,7 +53,6 @@
 		}
 
 		await reloadClientsPageData();
-		clientsOverride = null;
 	}
 
 	function openAddClient() {

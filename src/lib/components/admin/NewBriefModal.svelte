@@ -3,6 +3,7 @@
 	import {
 		clientsFromActionData,
 		normalizeClients,
+		reloadClientsPageData,
 		type ClientListRow
 	} from '$lib/admin/clients-sync';
 	import type { QuestionCategory } from '$lib/categories';
@@ -198,6 +199,8 @@
 					}))
 				);
 			}
+
+			await reloadClientsPageData();
 		}
 	}}
 />
