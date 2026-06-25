@@ -6,7 +6,7 @@
 	import PageHeader from '$lib/components/layout/PageHeader.svelte';
 	import PageShell from '$lib/components/layout/PageShell.svelte';
 	import type { ActionData } from './$types';
-	import { bindAuthFormDebug, submitAuthForm } from '$lib/utils/auth-form';
+	import { bindAuthFormDebug, submitAuthFormElement } from '$lib/utils/auth-form';
 
 	let { form }: { form: ActionData } = $props();
 
@@ -29,7 +29,7 @@
 		method="POST"
 		class="card form-group"
 		novalidate
-		onsubmit={(event) => submitAuthForm(event, 'set-pin')}
+		onsubmit={(event) => event.preventDefault()}
 	>
 		<div>
 			<label class="label" for="pin">New 6-digit PIN</label>
@@ -48,7 +48,9 @@
 		<LoginDurationSelect id="set-pin-login-duration" />
 
 		<div class="form-actions">
-			<Btn type="submit">Save PIN and continue</Btn>
+			<Btn type="button" onclick={() => formEl && submitAuthFormElement(formEl, 'set-pin')}>
+				Save PIN and continue
+			</Btn>
 		</div>
 	</form>
 

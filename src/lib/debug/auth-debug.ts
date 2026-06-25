@@ -30,7 +30,7 @@ export function authDebug(scope: string, data: Record<string, unknown> = {}): Au
 	};
 
 	if (typeof console !== 'undefined') {
-		console.info(AUTH_DEBUG_PREFIX, scope, data);
+		console.warn(AUTH_DEBUG_PREFIX, scope, data);
 	}
 
 	if (typeof window !== 'undefined') {

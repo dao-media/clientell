@@ -6,7 +6,7 @@
 		id,
 		name,
 		value = $bindable(''),
-		autocomplete = 'one-time-code' as HTMLInputElement['autocomplete'],
+		autocomplete = 'off' as HTMLInputElement['autocomplete'],
 		class: className = ''
 	}: {
 		id: string;
@@ -49,6 +49,7 @@
 	}
 
 	function onInvalid(event: Event) {
+		event.preventDefault();
 		const input = event.currentTarget as HTMLInputElement;
 		authDebug('pin-field-invalid', {
 			id,
@@ -59,6 +60,7 @@
 			pattern: input.pattern || null,
 			maxLength: input.maxLength
 		});
+		syncInput(input, 'invalid');
 	}
 </script>
 

@@ -46,6 +46,19 @@ export function prepareAuthFormForSubmit(form: HTMLFormElement, formId = 'auth-f
 }
 
 /** Submit without browser constraint validation (works around iOS ignoring novalidate). */
+export function submitAuthFormElement(form: HTMLFormElement, formId = 'auth-form') {
+	form.noValidate = true;
+	prepareAuthFormForSubmit(form, formId);
+	authDebug('form-submitting', {
+		formId,
+		action: form.action,
+		method: form.method,
+		bypass: 'programmatic'
+	});
+	form.submit();
+}
+
+/** Handler for form submit events (kept for Enter-key paths). */
 export function submitAuthForm(event: SubmitEvent, formId = 'auth-form') {
 	event.preventDefault();
 	const form = event.currentTarget;
@@ -54,9 +67,7 @@ export function submitAuthForm(event: SubmitEvent, formId = 'auth-form') {
 		return;
 	}
 
-	prepareAuthFormForSubmit(form, formId);
-	authDebug('form-submitting', { formId, action: form.action, method: form.method });
-	form.submit();
+	submitAuthFormElement(form, formId);
 }
 
 export function submitAuthFormOnEnter(
@@ -78,11 +89,73 @@ export function submitAuthFormOnEnter(
 
 	event.preventDefault();
 	authDebug('enter-submit', { formId, field: event.target.name });
-	prepareAuthFormForSubmit(event.currentTarget, formId);
-	event.currentTarget.submit();
+	submitAuthFormElement(event.currentTarget, formId);
 }
 
 export function bindAuthFormDebug(form: HTMLFormElement | null, formId: string) {
 	if (!form) return;
-	return attachAuthFormDebug(form, formId);
+
+	form.noValidate = true;
+
+	let bypassPending = false;
+
+	const onInvalid = (event: Event) => {
+		event.preventDefault();
+
+		const target = event.target;
+		if (!(target instanceof HTMLInputElement)) return;
+
+		const isPin = target.name === 'pin' || target.name === 'confirmPin';
+
+		authDebug('browser-validation-blocked', {
+			formId,
+			field: target.name,
+			inputType: target.type,
+			validationMessage: target.validationMessage,
+			valueLength: target.value.length,
+			required: target.required,
+			pattern: target.pattern || null,
+			maxLength: target.maxLength,
+			inputMode: target.inputMode || null,
+			willValidate: target.willValidate,
+			...(isPin ? { pin: analyzePinValue(target.value) } : {})
+		});
+
+		if (bypassPending) return;
+		bypassPending = true;
+		queueMicrotask(() => {
+			bypassPending = false;
+			submitAuthFormElement(form, formId);
+		});
+	};
+
+	const onSubmit = (event: Event) => {
+		const formData = new FormData(form);
+		authDebug('form-submit-event', {
+			formId,
+			defaultPrevented: event.defaultPrevented,
+			submitterType:
+				event instanceof SubmitEvent
+					? ((event.submitter as HTMLButtonElement | null)?.type ?? null)
+					: null,
+			email: maskEmail(String(formData.get('email') ?? '')),
+			pin: analyzePinValue(String(formData.get('pin') ?? '')),
+			confirmPin: analyzePinValue(String(formData.get('confirmPin') ?? ''))
+		});
+	};
+
+	form.addEventListener('invalid', onInvalid, true);
+	form.addEventListener('submit', onSubmit);
+
+	authDebug('form-attached', {
+		formId,
+		action: form.action,
+		method: form.method,
+		noValidate: form.noValidate
+	});
+
+	return () => {
+		form.removeEventListener('invalid', onInvalid, true);
+		form.removeEventListener('submit', onSubmit);
+	};
 }

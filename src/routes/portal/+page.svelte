@@ -7,7 +7,7 @@
 	import LogIn from '@lucide/svelte/icons/log-in';
 	import PageShell from '$lib/components/layout/PageShell.svelte';
 	import type { ActionData } from './$types';
-	import { bindAuthFormDebug, submitAuthForm, submitAuthFormOnEnter } from '$lib/utils/auth-form';
+	import { bindAuthFormDebug, submitAuthFormElement, submitAuthFormOnEnter } from '$lib/utils/auth-form';
 
 	let { form }: { form: ActionData } = $props();
 
@@ -30,7 +30,7 @@
 			method="POST"
 			class="form-group"
 			novalidate
-			onsubmit={(event) => submitAuthForm(event, 'portal-sign-in')}
+			onsubmit={(event) => event.preventDefault()}
 			onkeydown={(event) =>
 				submitAuthFormOnEnter(event, { focusPinOnEmail: true, formId: 'portal-sign-in' })}
 		>
@@ -41,8 +41,7 @@
 					id="email"
 					name="email"
 					type="text"
-					inputmode="email"
-					autocomplete="email"
+					autocomplete="username"
 					spellcheck="false"
 				/>
 			</div>
@@ -62,7 +61,14 @@
 			<LoginDurationSelect id="portal-login-duration" />
 
 			<div class="form-actions">
-				<Btn class="w-full" type="submit" icon={LogIn}>Continue</Btn>
+				<Btn
+					class="w-full"
+					type="button"
+					icon={LogIn}
+					onclick={() => formEl && submitAuthFormElement(formEl, 'portal-sign-in')}
+				>
+					Continue
+				</Btn>
 			</div>
 		</form>
 

@@ -5,7 +5,7 @@
 	import PageShell from '$lib/components/layout/PageShell.svelte';
 	import type { ActionData } from './$types';
 	import { authDebug, maskEmail } from '$lib/debug/auth-debug';
-	import { bindAuthFormDebug, submitAuthForm } from '$lib/utils/auth-form';
+	import { bindAuthFormDebug, submitAuthFormElement } from '$lib/utils/auth-form';
 	import { normalizeEmail } from '$lib/utils';
 
 	let { form }: { form: ActionData } = $props();
@@ -17,6 +17,7 @@
 	});
 
 	function onSubmit(event: SubmitEvent) {
+		event.preventDefault();
 		const formElement = event.currentTarget;
 		if (formElement instanceof HTMLFormElement) {
 			const email = formElement.querySelector<HTMLInputElement>('input[name="email"]');
@@ -28,8 +29,8 @@
 					after: maskEmail(email.value)
 				});
 			}
+			submitAuthFormElement(formElement, 'forgot-pin');
 		}
-		submitAuthForm(event, 'forgot-pin');
 	}
 </script>
 
@@ -53,8 +54,7 @@
 					id="email"
 					name="email"
 					type="text"
-					inputmode="email"
-					autocomplete="email"
+					autocomplete="username"
 					spellcheck="false"
 				/>
 			</div>
@@ -64,7 +64,9 @@
 			{/if}
 
 			<div class="form-actions">
-				<Btn class="w-full" type="submit">Send temporary PIN</Btn>
+				<Btn class="w-full" type="button" onclick={() => formEl && submitAuthFormElement(formEl, 'forgot-pin')}>
+					Send temporary PIN
+				</Btn>
 				<Btn class="w-full" variant="secondary" href="/portal">Back to sign in</Btn>
 			</div>
 		</form>

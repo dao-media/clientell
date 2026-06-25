@@ -8,7 +8,9 @@
 		serverDebug?: Record<string, unknown> | null;
 	} = $props();
 
-	let visible = $derived($page.url.searchParams.get('debug') === 'auth');
+	let visible = $derived(
+		$page.url.searchParams.get('debug') === 'auth' || import.meta.env.DEV
+	);
 	let entries = $state<readonly AuthDebugEntry[]>([]);
 
 	$effect(() => {
