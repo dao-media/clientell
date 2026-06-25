@@ -28,6 +28,14 @@
 	function onInput(event: Event) {
 		syncInput(event.currentTarget as HTMLInputElement);
 	}
+
+	function onPaste(event: ClipboardEvent) {
+		event.preventDefault();
+		const input = event.currentTarget as HTMLInputElement;
+		const pasted = event.clipboardData?.getData('text') ?? '';
+		input.value = normalizePinInput(pasted);
+		value = input.value;
+	}
 </script>
 
 <input
@@ -36,9 +44,11 @@
 	{name}
 	type="text"
 	inputmode="numeric"
-	{autocomplete}
+	autocomplete={autocomplete}
 	maxlength="6"
 	{required}
 	bind:value
 	oninput={onInput}
+	onpaste={onPaste}
+	onchange={(event) => syncInput(event.currentTarget as HTMLInputElement)}
 />

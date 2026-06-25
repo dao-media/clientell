@@ -6,7 +6,7 @@
 	import LogIn from '@lucide/svelte/icons/log-in';
 	import PageShell from '$lib/components/layout/PageShell.svelte';
 	import type { ActionData } from './$types';
-	import { submitAuthFormOnEnter } from '$lib/utils/auth-form';
+	import { prepareAuthFormForSubmit, submitAuthFormOnEnter } from '$lib/utils/auth-form';
 
 	let { form }: { form: ActionData } = $props();
 </script>
@@ -21,11 +21,22 @@
 		<form
 			method="POST"
 			class="form-group"
+			novalidate
+			onsubmit={(event) => prepareAuthFormForSubmit(event.currentTarget)}
 			onkeydown={(event) => submitAuthFormOnEnter(event, { focusPinOnEmail: true })}
 		>
 			<div>
 				<label class="label" for="email">Email</label>
-				<input class="field" id="email" name="email" type="email" autocomplete="email" required />
+				<input
+					class="field"
+					id="email"
+					name="email"
+					type="text"
+					inputmode="email"
+					autocomplete="email"
+					spellcheck="false"
+					required
+				/>
 			</div>
 			<div>
 				<label class="label" for="pin">6-digit PIN</label>

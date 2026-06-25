@@ -5,6 +5,7 @@
 	import PageHeader from '$lib/components/layout/PageHeader.svelte';
 	import PageShell from '$lib/components/layout/PageShell.svelte';
 	import type { ActionData } from './$types';
+	import { prepareAuthFormForSubmit } from '$lib/utils/auth-form';
 
 	let { form }: { form: ActionData } = $props();
 </script>
@@ -16,7 +17,12 @@
 		lead="This is your first sign-in. Pick a 6-digit PIN you will use from now on instead of the temporary one from your email."
 	/>
 
-	<form method="POST" class="card form-group">
+	<form
+		method="POST"
+		class="card form-group"
+		novalidate
+		onsubmit={(event) => prepareAuthFormForSubmit(event.currentTarget)}
+	>
 		<div>
 			<label class="label" for="pin">New 6-digit PIN</label>
 			<PinField id="pin" name="pin" required autocomplete="new-password" />

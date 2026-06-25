@@ -9,12 +9,11 @@
 	import ArrowRight from '@lucide/svelte/icons/arrow-right';
 	import LogIn from '@lucide/svelte/icons/log-in';
 	import type { ActionData } from './$types';
-	import { submitAuthFormOnEnter } from '$lib/utils/auth-form';
+	import { prepareAuthFormForSubmit, submitAuthFormOnEnter } from '$lib/utils/auth-form';
 
 	let { form }: { form: ActionData } = $props();
 
 	let expanded = $state<'admin' | 'portal' | null>(null);
-	let gridEl = $state<HTMLElement | null>(null);
 
 	function expandPanel(panel: 'admin' | 'portal') {
 		expanded = panel;
@@ -28,27 +27,6 @@
 		if (form?.adminError) expanded = 'admin';
 		else if (form?.portalError) expanded = 'portal';
 	});
-
-	$effect(() => {
-		if (!expanded) return;
-
-		const onPointerDown = (event: PointerEvent) => {
-			if (gridEl?.contains(event.target as Node)) return;
-			collapsePanel();
-		};
-
-		const onKeydown = (event: KeyboardEvent) => {
-			if (event.key === 'Escape') collapsePanel();
-		};
-
-		document.addEventListener('pointerdown', onPointerDown);
-		window.addEventListener('keydown', onKeydown);
-
-		return () => {
-			document.removeEventListener('pointerdown', onPointerDown);
-			window.removeEventListener('keydown', onKeydown);
-		};
-	});
 </script>
 
 <PageShell>
@@ -59,7 +37,6 @@
 	/>
 
 	<div
-		bind:this={gridEl}
 		class="home-grid"
 		class:home-grid--admin={expanded === 'admin'}
 		class:home-grid--portal={expanded === 'portal'}
@@ -78,6 +55,8 @@
 						method="POST"
 						action="?/adminLogin"
 						class="form-group home-login-form"
+						novalidate
+						onsubmit={(event) => prepareAuthFormForSubmit(event.currentTarget)}
 						onkeydown={submitAuthFormOnEnter}
 					>
 						<Field
@@ -123,6 +102,8 @@
 						method="POST"
 						action="?/portalLogin"
 						class="form-group home-login-form"
+						novalidate
+						onsubmit={(event) => prepareAuthFormForSubmit(event.currentTarget)}
 						onkeydown={(event) => submitAuthFormOnEnter(event, { focusPinOnEmail: true })}
 					>
 						<div>
@@ -131,8 +112,10 @@
 								class="field"
 								id="home-portal-email"
 								name="email"
-								type="email"
+								type="text"
+								inputmode="email"
 								autocomplete="email"
+								spellcheck="false"
 								required
 							/>
 						</div>

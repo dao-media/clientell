@@ -1,3 +1,6 @@
+import { normalizeEmail } from '$lib/utils';
+import { normalizePinInput } from '$lib/utils/pin';
+
 export function submitAuthFormOnEnter(
 	event: KeyboardEvent,
 	options: { focusPinOnEmail?: boolean } = {}
@@ -14,4 +17,18 @@ export function submitAuthFormOnEnter(
 
 	event.preventDefault();
 	event.currentTarget.requestSubmit();
+}
+
+/** Normalize auth fields before submit so browser validation is not required. */
+export function prepareAuthFormForSubmit(form: HTMLFormElement) {
+	const email = form.querySelector<HTMLInputElement>('input[name="email"]');
+	if (email) {
+		email.value = normalizeEmail(email.value);
+	}
+
+	for (const pinInput of form.querySelectorAll<HTMLInputElement>(
+		'input[name="pin"], input[name="confirmPin"]'
+	)) {
+		pinInput.value = normalizePinInput(pinInput.value);
+	}
 }
