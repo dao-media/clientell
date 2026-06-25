@@ -24,12 +24,14 @@
 		question,
 		answers = $bindable<Record<string, unknown>>({}),
 		disabled = false,
-		preview = false
+		preview = false,
+		client = false
 	}: {
 		question: Question;
 		answers?: Record<string, unknown>;
 		disabled?: boolean;
 		preview?: boolean;
+		client?: boolean;
 	} = $props();
 
 	const attachmentKey = $derived(attachmentAnswerKey(question.id));
@@ -155,10 +157,17 @@
 	{/if}
 {/snippet}
 
-<div class="question-field">
+<div class="question-field" class:question-field--client={client}>
 	<label class="label" for={question.id}>
-		{question.label}
-		{#if question.required}<span class="text-red-500">*</span>{/if}
+		{#if client}
+			<h4 class="question-heading">
+				{question.label}
+				{#if question.required}<span class="text-red-500">*</span>{/if}
+			</h4>
+		{:else}
+			{question.label}
+			{#if question.required}<span class="text-red-500">*</span>{/if}
+		{/if}
 	</label>
 
 	{#if splitWithUpload}
@@ -205,6 +214,25 @@
 	.question-field {
 		display: grid;
 		gap: 0.5rem;
+	}
+
+	.question-field--client .label {
+		display: block;
+		font-size: inherit;
+		font-weight: inherit;
+	}
+
+	.question-field--client .question-heading {
+		margin: 0;
+		font-size: 1.125rem;
+		font-weight: 600;
+		line-height: 1.4;
+		color: var(--color-ink);
+	}
+
+	.question-field--client :global(.field) {
+		font-size: 18px;
+		line-height: 1.5;
 	}
 
 	.answer-split {

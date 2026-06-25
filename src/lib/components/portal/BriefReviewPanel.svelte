@@ -62,7 +62,7 @@
 		{:else}
 			{#each questions as question (question.id)}
 				<article class="review-item">
-					<h3 class="review-question">{question.label}</h3>
+					<h4 class="review-question">{question.label}</h4>
 					{#if question.helpText}
 						<p class="review-help">{question.helpText}</p>
 					{/if}
@@ -135,7 +135,8 @@
 	}
 
 	.review-question {
-		font-size: 0.9375rem;
+		margin: 0;
+		font-size: 1.125rem;
 		font-weight: 600;
 		line-height: 1.4;
 	}

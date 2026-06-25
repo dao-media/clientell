@@ -213,7 +213,7 @@
 			</header>
 
 			<div class="wizard-question">
-				<QuestionField question={currentQuestion} bind:answers disabled={readOnly} />
+				<QuestionField question={currentQuestion} bind:answers disabled={readOnly} client />
 			</div>
 
 			<footer class="wizard-footer">
