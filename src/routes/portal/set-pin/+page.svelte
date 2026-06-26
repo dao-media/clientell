@@ -6,7 +6,11 @@
 	import PageHeader from '$lib/components/layout/PageHeader.svelte';
 	import PageShell from '$lib/components/layout/PageShell.svelte';
 	import type { ActionData } from './$types';
-	import { bindAuthFormDebug, submitAuthFormElement } from '$lib/utils/auth-form';
+	import {
+		bindAuthFormDebug,
+		submitAuthFormElement,
+		submitAuthFormOnEnter
+	} from '$lib/utils/auth-form';
 
 	let { form }: { form: ActionData } = $props();
 
@@ -30,6 +34,7 @@
 		class="card form-group"
 		novalidate
 		onsubmit={(event) => event.preventDefault()}
+		onkeydown={(event) => submitAuthFormOnEnter(event, { formId: 'set-pin' })}
 	>
 		<div>
 			<label class="label" for="pin">New 6-digit PIN</label>

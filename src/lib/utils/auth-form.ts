@@ -1,7 +1,33 @@
 import { applyAction, deserialize } from '$app/forms';
-import { authDebug, maskEmail, analyzePinValue } from '$lib/debug/auth-debug';
+import { attachAuthFormDebug, authDebug, maskEmail, analyzePinValue } from '$lib/debug/auth-debug';
 import { normalizeEmail } from '$lib/utils';
 import { isValidPin, normalizePinInput } from '$lib/utils/pin';
+
+/** Copy visible PIN boxes into their hidden POST fields (covers autofill without input events). */
+function syncPinFieldsInForm(form: HTMLFormElement) {
+	for (const display of form.querySelectorAll<HTMLInputElement>('[data-auth-pin]')) {
+		const fieldName = display.dataset.authPinName;
+		const normalized = normalizePinInput(display.value);
+		if (display.value !== normalized) {
+			display.value = normalized;
+		}
+
+		const hidden =
+			(fieldName
+				? form.querySelector<HTMLInputElement>(
+						`input[type="hidden"][name="${CSS.escape(fieldName)}"]`
+					)
+				: null) ??
+			(display.previousElementSibling instanceof HTMLInputElement &&
+			display.previousElementSibling.type === 'hidden'
+				? display.previousElementSibling
+				: null);
+
+		if (hidden) {
+			hidden.value = normalized;
+		}
+	}
+}
 
 function resolveActionUrl(form: HTMLFormElement): URL {
 	const actionAttr = form.getAttribute('action');
@@ -11,16 +37,26 @@ function resolveActionUrl(form: HTMLFormElement): URL {
 	return new URL(form.action, window.location.href);
 }
 
+function readPinFromForm(form: HTMLFormElement, fieldName: 'pin' | 'confirmPin'): string {
+	const hidden = form.querySelector<HTMLInputElement>(`input[type="hidden"][name="${fieldName}"]`);
+	if (hidden?.value) {
+		return normalizePinInput(hidden.value);
+	}
+
+	const display = form.querySelector<HTMLInputElement>(
+		`[data-auth-pin-name="${fieldName}"]`
+	);
+	return normalizePinInput(display?.value ?? '');
+}
+
 function readAuthFormData(form: HTMLFormElement): FormData {
+	syncPinFieldsInForm(form);
+
 	const emailInput = form.querySelector<HTMLInputElement>('input[name="email"]');
 	const email = normalizeEmail(emailInput?.value ?? '');
 
-	const pin = normalizePinInput(
-		form.querySelector<HTMLInputElement>('input[name="pin"]')?.value ?? ''
-	);
-	const confirmPin = normalizePinInput(
-		form.querySelector<HTMLInputElement>('input[name="confirmPin"]')?.value ?? ''
-	);
+	const pin = readPinFromForm(form, 'pin');
+	const confirmPin = readPinFromForm(form, 'confirmPin');
 
 	const duration =
 		form.querySelector<HTMLSelectElement>('select[name="loginDuration"]')?.value ?? '';
@@ -40,6 +76,8 @@ function readAuthFormData(form: HTMLFormElement): FormData {
 
 /** Normalize auth fields in the DOM (keeps hidden PIN + email inputs in sync). */
 export function prepareAuthFormForSubmit(form: HTMLFormElement, formId = 'auth-form') {
+	syncPinFieldsInForm(form);
+
 	const before = {
 		email: maskEmail(form.querySelector<HTMLInputElement>('input[name="email"]')?.value ?? ''),
 		pin: analyzePinValue(form.querySelector<HTMLInputElement>('input[name="pin"]')?.value ?? ''),
@@ -168,12 +206,5 @@ export function bindAuthFormDebug(form: HTMLFormElement | null, formId: string) 
 		}
 	}
 
-	authDebug('form-attached', {
-		formId,
-		action: form.getAttribute('action') ?? form.action,
-		method: form.method,
-		noValidate: form.noValidate
-	});
-
-	return () => {};
+	return attachAuthFormDebug(form, formId);
 }

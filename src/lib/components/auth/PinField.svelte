@@ -50,27 +50,39 @@
 		syncPin(pasted, 'paste');
 	}
 
+	function onChange(event: Event) {
+		syncPin((event.currentTarget as HTMLInputElement).value, 'change');
+	}
+
+	function onBlur(event: Event) {
+		syncPin((event.currentTarget as HTMLInputElement).value, 'blur');
+	}
+
 	function onInvalid(event: Event) {
 		event.preventDefault();
 	}
 </script>
 
 <!-- Hidden field carries the POST value; visible field is display-only (no name = no browser format checks). -->
-<input type="hidden" {name} bind:this={hiddenInput} value={value} />
+<input type="hidden" {name} bind:this={hiddenInput} bind:value />
 
 <input
 	class="field font-mono tracking-[0.3em] {className}"
 	{id}
-	type="text"
-	autocomplete="off"
+	type="tel"
+	inputmode="numeric"
+	autocomplete="one-time-code"
 	autocapitalize="off"
 	autocorrect="off"
 	spellcheck="false"
 	enterkeyhint="done"
 	maxlength={6}
 	data-auth-pin="true"
+	data-auth-pin-name={name}
 	value={display}
 	oninput={onInput}
+	onchange={onChange}
+	onblur={onBlur}
 	onpaste={onPaste}
 	oninvalid={onInvalid}
 />
