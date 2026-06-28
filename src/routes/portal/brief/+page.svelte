@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { deserialize } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import Btn from '$lib/components/Btn.svelte';
 	import BriefReviewPanel from '$lib/components/portal/BriefReviewPanel.svelte';
@@ -8,7 +7,7 @@
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import PageHeader from '$lib/components/layout/PageHeader.svelte';
 	import PageShell from '$lib/components/layout/PageShell.svelte';
-	import { buildBriefFormData } from '$lib/portal/brief-form';
+	import { buildBriefFormData, submitBriefAction } from '$lib/portal/brief-form';
 	import { isQuestionAnswered } from '$lib/utils';
 	import LogOut from '@lucide/svelte/icons/log-out';
 	import type { ActionData, PageData } from './$types';
@@ -139,8 +138,7 @@
 		actionError = '';
 
 		const formData = buildBriefFormData(questions, answers, { partial });
-		const response = await fetch('?/save', { method: 'POST', body: formData });
-		const result = deserialize(await response.text());
+		const result = await submitBriefAction('save', formData);
 
 		if (result.type === 'success') {
 			saveState = 'saved';
@@ -189,8 +187,7 @@
 		actionError = '';
 
 		const formData = buildBriefFormData(questions, answers);
-		const response = await fetch('?/submit', { method: 'POST', body: formData });
-		const result = deserialize(await response.text());
+		const result = await submitBriefAction('submit', formData);
 
 		submitting = false;
 
@@ -278,7 +275,6 @@
 					question={currentQuestion}
 					bind:answers
 					disabled={readOnly}
-					client
 					onAnswerChange={noteClientInput}
 				/>
 			</div>
@@ -312,91 +308,3 @@
 		</div>
 	{/if}
 </PageShell>
-
-<style>
-	.brief-wizard {
-		display: flex;
-		flex-direction: column;
-		gap: 1.25rem;
-		padding: 1.25rem;
-	}
-
-	.wizard-header {
-		display: grid;
-		gap: 0.65rem;
-	}
-
-	.wizard-kicker {
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: var(--color-muted);
-	}
-
-	.wizard-progress {
-		height: 0.35rem;
-		border-radius: var(--radius-lg);
-		background: var(--color-border);
-		overflow: hidden;
-	}
-
-	.wizard-progress-fill {
-		display: block;
-		height: 100%;
-		background: var(--color-accent);
-		border-radius: inherit;
-		transition: width 0.25s ease;
-	}
-
-	.wizard-question {
-		padding: 0.25rem 0 0.5rem;
-	}
-
-	.wizard-footer {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.75rem;
-		padding-top: 1rem;
-		border-top: 1px solid var(--color-border);
-	}
-
-	.wizard-status {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		min-height: 1.25rem;
-		font-size: 0.875rem;
-		color: var(--color-muted);
-	}
-
-	.wizard-status-error {
-		color: var(--color-danger, #b42318);
-	}
-
-	.wizard-actions {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.75rem;
-		margin-left: auto;
-	}
-
-	.empty-state {
-		color: var(--color-muted);
-	}
-
-	@media (max-width: 767px) {
-		.wizard-footer {
-			flex-direction: column;
-			align-items: stretch;
-		}
-
-		.wizard-actions {
-			margin-left: 0;
-		}
-
-		.wizard-actions :global(.btn) {
-			flex: 1;
-		}
-	}
-</style>

@@ -1,0 +1,263 @@
+/*
+ * Client portal brief wizard + review — all typography and layout in one place.
+ * Imported globally from layout.css so styles apply inside Svelte child components.
+ */
+
+/* —— Wizard shell —— */
+
+.brief-wizard {
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+	padding: 1.25rem;
+}
+
+.brief-wizard .wizard-header {
+	display: grid;
+	gap: 0.65rem;
+}
+
+.brief-wizard .wizard-kicker {
+	margin: 0;
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: var(--color-muted);
+}
+
+.brief-wizard .wizard-progress {
+	height: 0.35rem;
+	border-radius: var(--radius-lg);
+	background: var(--color-border);
+	overflow: hidden;
+}
+
+.brief-wizard .wizard-progress-fill {
+	display: block;
+	height: 100%;
+	background: var(--color-accent);
+	border-radius: inherit;
+	transition: width 0.25s ease;
+}
+
+.brief-wizard .wizard-question {
+	padding: 0.25rem 0 0.5rem;
+}
+
+.brief-wizard .wizard-footer {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	padding-top: 1rem;
+	border-top: 1px solid var(--color-border);
+}
+
+.brief-wizard .wizard-status {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	min-height: 1.25rem;
+	font-size: 0.875rem;
+	color: var(--color-muted);
+}
+
+.brief-wizard .wizard-status-error {
+	color: var(--color-error);
+}
+
+.brief-wizard .wizard-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+	margin-left: auto;
+}
+
+/* —— Wizard questions (H5 + 18px fields) —— */
+
+.brief-wizard .question-field {
+	display: grid;
+	gap: 0.5rem;
+}
+
+.brief-wizard .question-heading {
+	margin: 0;
+	font-size: 20px;
+	font-weight: 600;
+	line-height: 1.3;
+	color: var(--color-ink);
+}
+
+.brief-wizard .question-heading .required-mark {
+	color: var(--color-error);
+}
+
+.brief-wizard .client-brief-input,
+.brief-wizard .question-field :is(input.field, textarea.field, select.field) {
+	font-size: 18px !important;
+	line-height: 1.5 !important;
+}
+
+.brief-wizard .answer-split {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	gap: 0.75rem;
+	align-items: stretch;
+}
+
+.brief-wizard .answer-split__text {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	min-height: 8rem;
+	align-self: stretch;
+}
+
+.brief-wizard .answer-split__media {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	align-self: stretch;
+}
+
+.brief-wizard .answer-split__text .field-split {
+	flex: 1 1 auto;
+	min-height: 8rem;
+	height: 100%;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.brief-wizard .answer-split__text textarea.field-split {
+	resize: none;
+	overflow-y: auto;
+}
+
+/* —— Review panel —— */
+
+.brief-review {
+	position: relative;
+	border: 1px solid var(--color-border);
+	background: var(--color-surface);
+	border-radius: var(--radius-lg);
+	overflow: hidden;
+}
+
+.brief-review .review-floating-header {
+	position: sticky;
+	top: 0;
+	z-index: 10;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	padding: 0.875rem 1.25rem;
+	background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+	border-bottom: 1px solid var(--color-border);
+	backdrop-filter: blur(8px);
+	box-shadow: 0 4px 16px rgb(15 23 42 / 8%);
+}
+
+.brief-review .review-body {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+	max-height: min(70vh, 42rem);
+	overflow-y: auto;
+	padding: 1.25rem;
+}
+
+.brief-review .review-item {
+	padding: 1rem 0;
+	border-bottom: 1px solid var(--color-border);
+}
+
+.brief-review .review-item:first-child {
+	padding-top: 0;
+}
+
+.brief-review .review-item:last-of-type {
+	border-bottom: 0;
+}
+
+.brief-review .review-question {
+	margin: 0;
+	font-size: 20px;
+	font-weight: 600;
+	line-height: 1.3;
+	color: var(--color-ink);
+}
+
+.brief-review .review-help {
+	margin-top: 0.25rem;
+	font-size: 0.8125rem;
+	color: var(--color-muted);
+}
+
+.brief-review .review-answer {
+	margin-top: 0.5rem;
+	white-space: pre-wrap;
+	font-size: 18px;
+	line-height: 1.5;
+	color: var(--color-ink);
+}
+
+.brief-review .review-attachments {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin-top: 0.75rem;
+}
+
+.brief-review .review-note {
+	margin-top: 1rem;
+	padding-top: 1rem;
+	border-top: 1px solid var(--color-border);
+	font-size: 0.875rem;
+	color: var(--color-muted);
+	line-height: 1.45;
+}
+
+.brief-review .review-empty {
+	color: var(--color-muted);
+	font-size: 0.9375rem;
+}
+
+.brief-review .review-floating-header .btn {
+	min-width: 7.5rem;
+}
+
+.brief-review .review-floating-header .submit-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+}
+
+/* —— Responsive —— */
+
+@media (max-width: 767px) {
+	.brief-wizard .wizard-footer {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.brief-wizard .wizard-actions {
+		margin-left: 0;
+	}
+
+	.brief-wizard .wizard-actions .btn {
+		flex: 1;
+	}
+}
+
+@media (max-width: 640px) {
+	.brief-wizard .answer-split {
+		grid-template-columns: 1fr;
+	}
+
+	.brief-wizard .answer-split__text .field-split {
+		min-height: 6rem;
+	}
+}

@@ -3,6 +3,7 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import SiteHeader from '$lib/components/SiteHeader.svelte';
 	import './layout.css';
+	import '$lib/styles/client-brief.css';
 
 	let { data, children } = $props();
 </script>

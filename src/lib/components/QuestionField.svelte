@@ -25,14 +25,12 @@
 		answers = $bindable<Record<string, unknown>>({}),
 		disabled = false,
 		preview = false,
-		client = false,
 		onAnswerChange
 	}: {
 		question: Question;
 		answers?: Record<string, unknown>;
 		disabled?: boolean;
 		preview?: boolean;
-		client?: boolean;
 		onAnswerChange?: () => void;
 	} = $props();
 
@@ -100,7 +98,7 @@
 		<textarea
 			id={question.id}
 			class="field"
-			class:client-brief-answer={client}
+			class:client-brief-input={!preview}
 			class:field-split={split}
 			class:min-h-32={!split}
 			class:field-invalid={!!restrictionError}
@@ -111,7 +109,7 @@
 			}}
 			{disabled}
 			required={nativeRequired}
-			aria-labelledby={client ? `${question.id}-label` : undefined}
+			aria-labelledby={!preview ? `${question.id}-heading` : undefined}
 			aria-invalid={restrictionError ? 'true' : undefined}
 			aria-describedby={restrictionError ? `${question.id}-restriction-error` : undefined}
 		></textarea>
@@ -119,7 +117,7 @@
 		<select
 			id={question.id}
 			class="field"
-			class:client-brief-answer={client}
+			class:client-brief-input={!preview}
 			name={question.id}
 			value={answerValue}
 			onchange={(event) => {
@@ -127,7 +125,7 @@
 			}}
 			{disabled}
 			required={nativeRequired}
-			aria-labelledby={client ? `${question.id}-label` : undefined}
+			aria-labelledby={!preview ? `${question.id}-heading` : undefined}
 		>
 			<option value="">Select an option</option>
 			{#each question.options ?? [] as option (option)}
@@ -154,7 +152,7 @@
 		<input
 			id={question.id}
 			class="field"
-			class:client-brief-answer={client}
+			class:client-brief-input={!preview}
 			class:field-split={split}
 			class:field-invalid={!!restrictionError}
 			name={question.id}
@@ -171,26 +169,24 @@
 			}}
 			{disabled}
 			required={nativeRequired}
-			aria-labelledby={client ? `${question.id}-label` : undefined}
+			aria-labelledby={!preview ? `${question.id}-heading` : undefined}
 			aria-invalid={restrictionError ? 'true' : undefined}
 			aria-describedby={restrictionError ? `${question.id}-restriction-error` : undefined}
 		/>
 	{/if}
 {/snippet}
 
-<div class="question-field" class:question-field--client={client}>
-	{#if client}
-		<div class="question-label">
-			<h5 id="{question.id}-label" class="question-heading">
-				{question.label}
-				{#if question.required}<span class="text-red-500">*</span>{/if}
-			</h5>
-		</div>
-	{:else}
+<div class="question-field">
+	{#if preview}
 		<label class="label" for={question.id}>
 			{question.label}
 			{#if question.required}<span class="text-red-500">*</span>{/if}
 		</label>
+	{:else}
+		<h5 id="{question.id}-heading" class="question-heading">
+			{question.label}
+			{#if question.required}<span class="required-mark">*</span>{/if}
+		</h5>
 	{/if}
 
 	{#if splitWithUpload}
@@ -232,73 +228,3 @@
 		<p class="help">{question.helpText}</p>
 	{/if}
 </div>
-
-<style>
-	.question-field {
-		display: grid;
-		gap: 0.5rem;
-	}
-
-	.question-field--client .question-label {
-		display: block;
-	}
-
-	.question-field--client .question-heading {
-		margin: 0;
-		font-size: var(--heading-h5-size);
-		font-weight: var(--heading-font-weight);
-		line-height: var(--heading-h5-line-height);
-		color: var(--color-ink);
-	}
-
-	.question-field--client :global(.field),
-	.question-field--client :global(.client-brief-answer) {
-		font-size: 18px !important;
-		line-height: 1.5 !important;
-	}
-
-	.answer-split {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-		gap: 0.75rem;
-		align-items: stretch;
-	}
-
-	.answer-split__text {
-		display: flex;
-		flex-direction: column;
-		min-width: 0;
-		min-height: 8rem;
-		align-self: stretch;
-	}
-
-	.answer-split__media {
-		display: flex;
-		flex-direction: column;
-		min-width: 0;
-		align-self: stretch;
-	}
-
-	.answer-split__text :global(.field-split) {
-		flex: 1 1 auto;
-		min-height: 8rem;
-		height: 100%;
-		width: 100%;
-		box-sizing: border-box;
-	}
-
-	.answer-split__text :global(textarea.field-split) {
-		resize: none;
-		overflow-y: auto;
-	}
-
-	@media (max-width: 640px) {
-		.answer-split {
-			grid-template-columns: 1fr;
-		}
-
-		.answer-split__text :global(.field-split) {
-			min-height: 6rem;
-		}
-	}
-</style>

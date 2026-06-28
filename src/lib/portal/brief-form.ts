@@ -1,4 +1,5 @@
 import { attachmentAnswerKey } from '$lib/attachments';
+import { deserialize } from '$app/forms';
 import type { QuestionType } from '$lib/server/db/schema';
 
 export type BriefQuestion = {
@@ -20,9 +21,12 @@ export function buildBriefFormData(
 
 	for (const question of questions) {
 		const value = answers[question.id];
-		if (value === true) {
-			formData.set(question.id, 'on');
-		} else if (value !== undefined && value !== null && value !== '') {
+
+		if (question.type === 'checkbox') {
+			formData.set(question.id, value === true ? 'on' : '');
+		} else if (value === undefined || value === null) {
+			formData.set(question.id, '');
+		} else {
 			formData.set(question.id, String(value));
 		}
 
@@ -35,4 +39,18 @@ export function buildBriefFormData(
 	}
 
 	return formData;
+}
+
+/** POST a portal brief action and deserialize the SvelteKit action result. */
+export async function submitBriefAction(action: 'save' | 'submit', formData: FormData) {
+	const response = await fetch(`?/${action}`, {
+		method: 'POST',
+		headers: {
+			accept: 'application/json',
+			'x-sveltekit-action': 'true'
+		},
+		body: formData
+	});
+
+	return deserialize(await response.text());
 }
