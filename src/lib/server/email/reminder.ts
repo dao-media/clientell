@@ -26,9 +26,9 @@ export async function sendBriefReminder(
 ): Promise<ReminderResult> {
 	const siteUrl = getPublicOrigin(platform);
 	const { subject, text, html } = buildClientEmail({
-		subject: `Reminder: your Briefly brief — ${params.briefTitle}`,
+		subject: `Reminder: your ClienTell brief — ${params.briefTitle}`,
 		greetingName: params.contactName,
-		intro: `Just a friendly reminder from Dane to finish your brief in Briefly. You're ${params.progress}% through "${params.briefTitle}". When you have a few minutes, follow these steps:`,
+		intro: `Just a friendly reminder from Dane to finish your brief in ClienTell. You're ${params.progress}% through "${params.briefTitle}". When you have a few minutes, follow these steps:`,
 		steps: [
 			...portalSignInSteps(siteUrl),
 			'Sign in with your email address and PIN. (Be sure to select how long you\'d like to remain logged in.)',
@@ -56,10 +56,10 @@ export async function sendBriefReadyEmail(
 		: '';
 
 	const { subject, text, html } = buildClientEmail({
-		subject: 'Your Briefly link is ready',
+		subject: 'Your ClienTell link is ready',
 		greetingName: params.contactName,
 		intro:
-			"You are receiving this email so you can access Dane's brief-builder tool, Briefly. Below, you will find the tool login link and your one-time PIN number. To get logged in, follow these steps:",
+			"You are receiving this email so you can access Dane's client workspace, ClienTell. Below, you will find the login link and your one-time PIN number. To get logged in, follow these steps:",
 		steps: [
 			...portalSignInSteps(siteUrl),
 			`Input your email address, ${params.loginEmail}, and temporary PIN ${params.pin}. (Be sure to select how long you'd like to remain logged in.)`,
@@ -87,9 +87,9 @@ export async function sendBriefAccessHelpEmail(
 ): Promise<ReminderResult> {
 	const siteUrl = getPublicOrigin(platform);
 	const { subject, text, html } = buildClientEmail({
-		subject: 'Need help accessing Briefly?',
+		subject: 'Need help accessing ClienTell?',
 		greetingName: params.contactName,
-		intro: `Need help accessing Briefly? Here is a reminder of how to sign in and open your brief, "${params.briefTitle}".`,
+		intro: `Need help accessing ClienTell? Here is a reminder of how to sign in and open your brief, "${params.briefTitle}".`,
 		steps: [
 			...portalSignInSteps(siteUrl),
 			`Sign in with your email address, ${params.loginEmail}, and the PIN you set during your first login. (Be sure to select how long you'd like to remain logged in.)`,
@@ -118,9 +118,9 @@ export async function sendPortalLinkEmail(
 ): Promise<ReminderResult> {
 	const siteUrl = getPublicOrigin(platform);
 	const { subject, text, html } = buildClientEmail({
-		subject: `Your Briefly link — ${params.briefTitle}`,
+		subject: `Your ClienTell link — ${params.briefTitle}`,
 		greetingName: params.contactName,
-		intro: `Here is your link back to Briefly for "${params.briefTitle}". To sign in, follow these steps:`,
+		intro: `Here is your link back to ClienTell for "${params.briefTitle}". To sign in, follow these steps:`,
 		steps: [
 			...portalSignInSteps(siteUrl),
 			'Sign in with your email and the PIN we shared with you earlier. (Be sure to select how long you\'d like to remain logged in.)',
@@ -143,10 +143,10 @@ export async function sendForgotPinEmail(
 	const siteUrl = getPublicOrigin(platform);
 	const pinNote = firstLoginPinNote();
 	const { subject, text, html } = buildClientEmail({
-		subject: 'Your new Briefly sign-in PIN',
+		subject: 'Your new ClienTell sign-in PIN',
 		greetingName: params.contactName,
 		intro:
-			'You requested a new sign-in PIN for Briefly. Use the temporary PIN below to get back in. Follow these steps:',
+			'You requested a new sign-in PIN for ClienTell. Use the temporary PIN below to get back in. Follow these steps:',
 		steps: [
 			...portalSignInSteps(siteUrl),
 			`Input your email address, ${params.loginEmail}, and temporary PIN ${params.pin}. (Be sure to select how long you'd like to remain logged in.)`,
@@ -175,20 +175,47 @@ export async function sendBriefSubmittedNotification(
 	const text = [
 		'Hi Dane,',
 		'',
-		`${params.clientContact} at ${params.clientCompany} submitted their brief in Briefly.`,
+		`${params.clientContact} at ${params.clientCompany} submitted their brief in ClienTell.`,
 		`Brief: ${params.briefTitle}`,
 		'',
 		`Review it here: ${params.submissionUrl}`,
 		'',
-		'— Briefly'
+		'— ClienTell'
 	].join('\n');
 	const html = `
 		<p>Hi Dane,</p>
-		<p><strong>${params.clientContact}</strong> at <strong>${params.clientCompany}</strong> submitted their brief in Briefly.</p>
+		<p><strong>${params.clientContact}</strong> at <strong>${params.clientCompany}</strong> submitted their brief in ClienTell.</p>
 		<p>Brief: <strong>${params.briefTitle}</strong></p>
-		<p><a href="${params.submissionUrl}">Open submission in Briefly</a></p>
-		<p>— Briefly</p>
+		<p><a href="${params.submissionUrl}">Open submission in ClienTell</a></p>
+		<p>— ClienTell</p>
 	`;
 
 	return sendEmail(platform, { to: params.to, subject, html, text });
+}
+
+export async function sendContractReadyEmail(
+	platform: App.Platform | undefined,
+	params: {
+		to: string;
+		contactName: string;
+		projectName: string;
+		downloadUrl: string;
+	}
+): Promise<ReminderResult> {
+	const { subject, text, html } = buildClientEmail({
+		subject: `Your ClienTell contract — ${params.projectName}`,
+		greetingName: params.contactName,
+		intro: `Dane has sent a contract packet for "${params.projectName}" for your review. Follow these steps:`,
+		steps: [
+			`Open and sign the contract: ${params.downloadUrl}`,
+			'Review the Design & Development Services Agreement, Exhibit A (Statement of Work), and any addenda.',
+			'Sign in the Client box with your cursor or finger, then save your signature.'
+		]
+	});
+
+	const result = await sendEmail(platform, { to: params.to, subject, html, text });
+	if (result.ok && !result.simulated) {
+		return { ...result, message: `Contract sent to ${params.to}.` };
+	}
+	return result;
 }

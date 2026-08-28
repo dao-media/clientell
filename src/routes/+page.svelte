@@ -23,7 +23,7 @@
 		admin: {
 			eyebrow: 'Admin console',
 			title: 'Admin sign in',
-			lead: 'Use your Briefly admin password.'
+			lead: 'Use your ClienTell admin password.'
 		},
 		portal: {
 			eyebrow: 'Client portal',
@@ -57,9 +57,9 @@
 <PageShell>
 	{#if expanded === null}
 		<PageHeader
-			kicker="Client intake"
-			title="Collect briefs without the back-and-forth."
-			lead="Send a link, share a PIN, and let clients answer on their own time — with autosave, resume, and submit."
+			kicker="ClienTell"
+			title="Briefs and contracts from one client record."
+			lead="Send a PIN-gated brief, then generate a priced agreement, SOW, and optional addendum — without the back-and-forth."
 		/>
 	{/if}
 

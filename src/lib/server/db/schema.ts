@@ -1,7 +1,19 @@
 import { relations } from 'drizzle-orm';
-import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import type { QuestionCategory } from '$lib/categories';
-import { createClientId, createQuestionId } from '$lib/ids';
+import type {
+	ConfidentialityTier,
+	ContractClauseType,
+	ContractDeliverable,
+	ContractDocType,
+	ContractMilestone,
+	ContractModuleKey,
+	ContractServiceOwnership,
+	ContractStatus,
+	RemainingStructure,
+	ThirdPartyOption
+} from '$lib/contract/types';
+import { createClauseId, createClientId, createContractId, createQuestionId } from '$lib/ids';
 import type { QuestionInputRestriction } from '$lib/question-restrictions';
 
 export const questionTypes = [
@@ -26,10 +38,88 @@ export const clients = sqliteTable('clients', {
 	email: text('email').notNull(),
 	phone: text('phone'),
 	services: text('services', { mode: 'json' }).$type<string[]>().notNull().default([]),
+	legalName: text('legal_name'),
+	entityType: text('entity_type'),
+	entityState: text('entity_state'),
 	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
 		.$defaultFn(() => new Date())
 });
+
+export const clauses = sqliteTable('clauses', {
+	id: text('id')
+		.primaryKey()
+		.$defaultFn(() => createClauseId()),
+	sectionNumber: text('section_number').notNull(),
+	title: text('title').notNull(),
+	body: text('body').notNull(),
+	docType: text('doc_type').$type<ContractDocType>().notNull(),
+	clauseType: text('clause_type').$type<ContractClauseType>().notNull(),
+	moduleKey: text('module_key').$type<ContractModuleKey | null>(),
+	sortOrder: integer('sort_order').notNull().default(0),
+	isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true)
+});
+
+export const contracts = sqliteTable(
+	'contracts',
+	{
+		id: text('id')
+			.primaryKey()
+			.$defaultFn(() => createContractId()),
+		clientId: text('client_id')
+			.notNull()
+			.references(() => clients.id, { onDelete: 'cascade' }),
+		projectName: text('project_name').notNull(),
+		description: text('description'),
+		deliverables: text('deliverables', { mode: 'json' })
+			.$type<ContractDeliverable[]>()
+			.notNull()
+			.default([]),
+		outOfScope: text('out_of_scope', { mode: 'json' }).$type<string[]>().notNull().default([]),
+		approvalStages: text('approval_stages', { mode: 'json' })
+			.$type<string[]>()
+			.notNull()
+			.default([]),
+		milestones: text('milestones', { mode: 'json' })
+			.$type<ContractMilestone[]>()
+			.notNull()
+			.default([]),
+		estimatedStart: integer('estimated_start', { mode: 'timestamp' }),
+		baseFee: integer('base_fee').notNull().default(0),
+		overageRate: integer('overage_rate').notNull().default(6500),
+		remainingStructure: text('remaining_structure')
+			.$type<RemainingStructure>()
+			.notNull()
+			.default('single'),
+		thirdPartyOption: text('third_party_option').$type<ThirdPartyOption | null>(),
+		handlingPct: integer('handling_pct').notNull().default(12),
+		perItemThreshold: integer('per_item_threshold').notNull().default(10000),
+		serviceOwnership: text('service_ownership', { mode: 'json' })
+			.$type<ContractServiceOwnership[]>()
+			.notNull()
+			.default([]),
+		personalGuarantee: integer('personal_guarantee', { mode: 'boolean' }).notNull().default(false),
+		confidentiality: integer('confidentiality', { mode: 'boolean' }).notNull().default(false),
+		confidentialityTier: integer('confidentiality_tier').$type<ConfidentialityTier | null>(),
+		premiumPct: integer('premium_pct').notNull().default(0),
+		premiumFloor: integer('premium_floor').notNull().default(75000),
+		governingState: text('governing_state').notNull().default('West Virginia'),
+		venueCounty: text('venue_county'),
+		status: text('status').$type<ContractStatus>().notNull().default('draft'),
+		createdAt: integer('created_at', { mode: 'timestamp' })
+			.notNull()
+			.$defaultFn(() => new Date()),
+		sentAt: integer('sent_at', { mode: 'timestamp' }),
+		signedAt: integer('signed_at', { mode: 'timestamp' }),
+		clientSignature: text('client_signature'),
+		designerSignature: text('designer_signature'),
+		clientSignedAt: integer('client_signed_at', { mode: 'timestamp' }),
+		designerSignedAt: integer('designer_signed_at', { mode: 'timestamp' }),
+		pdfKey: text('pdf_key'),
+		downloadToken: text('download_token')
+	},
+	(table) => [uniqueIndex('contracts_download_token_unique').on(table.downloadToken)]
+);
 
 export const questionSets = sqliteTable('question_sets', {
 	id: text('id')
@@ -107,7 +197,15 @@ export const responses = sqliteTable('responses', {
 });
 
 export const clientsRelations = relations(clients, ({ many }) => ({
-	assignments: many(assignments)
+	assignments: many(assignments),
+	contracts: many(contracts)
+}));
+
+export const contractsRelations = relations(contracts, ({ one }) => ({
+	client: one(clients, {
+		fields: [contracts.clientId],
+		references: [clients.id]
+	})
 }));
 
 export const questionSetsRelations = relations(questionSets, ({ many }) => ({

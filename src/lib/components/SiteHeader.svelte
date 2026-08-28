@@ -1,34 +1,43 @@
 <script lang="ts">
+	import { afterNavigate } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { page } from '$app/stores';
+	import BrandLogo from '$lib/components/BrandLogo.svelte';
 	import ThemeToggle from '$lib/components/admin/ThemeToggle.svelte';
 	import {
 		SUBMISSION_STATUS_FILTERS,
 		submissionNavActive
 	} from '$lib/admin/submission-filters';
+	import { CONTRACT_STATUS_FILTERS, contractNavActive } from '$lib/admin/contract-filters';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 
 	let { admin = false, client = false }: { admin?: boolean; client?: boolean } = $props();
 
 	const manageLinks = [
 		{ href: '/admin/clients', label: 'Clients' },
-		{ href: '/admin/question-sets', label: 'Briefs' }
+		{ href: '/admin/question-sets', label: 'Briefs' },
+		{ href: '/admin/clauses', label: 'Clauses' }
 	] as const;
 
 	const submissionLinks = SUBMISSION_STATUS_FILTERS.map(({ href, label }) => ({ href, label }));
+	const contractLinks = CONTRACT_STATUS_FILTERS.map(({ href, label }) => ({ href, label }));
 
 	const pathname = $derived($page.url.pathname);
+	const search = $derived($page.url.search);
 	const brandHref = '/';
 	const showAdminNav = $derived(admin);
 	const hasNav = $derived(showAdminNav);
 	const manageActive = $derived(
 		pathname.startsWith('/admin/clients') ||
 			pathname.startsWith('/admin/question-sets') ||
-			pathname.startsWith('/admin/briefs')
+			pathname.startsWith('/admin/briefs') ||
+			pathname.startsWith('/admin/clauses')
 	);
 	const submissionsActive = $derived(pathname.startsWith('/admin/submissions'));
+	const contractsActive = $derived(pathname.startsWith('/admin/contracts'));
 
 	let menuOpen = $state(false);
-	let openDropdown = $state<'manage' | 'submissions' | null>(null);
+	let openDropdown = $state<'manage' | 'submissions' | 'contracts' | null>(null);
 
 	function navLinkActive(href: string): boolean {
 		return pathname === href || pathname.startsWith(`${href}/`);
@@ -36,6 +45,10 @@
 
 	function submissionLinkActive(href: string): boolean {
 		return submissionNavActive(pathname, href);
+	}
+
+	function contractLinkActive(href: string): boolean {
+		return contractNavActive(pathname, search, href);
 	}
 
 	function toggleMenu() {
@@ -46,40 +59,40 @@
 		menuOpen = false;
 	}
 
-	function showDropdown(id: 'manage' | 'submissions') {
+	function showDropdown(id: 'manage' | 'submissions' | 'contracts') {
 		openDropdown = id;
 	}
 
-	function hideDropdown(id: 'manage' | 'submissions') {
+	function hideDropdown(id: 'manage' | 'submissions' | 'contracts') {
 		if (openDropdown === id) openDropdown = null;
 	}
 
-	$effect(() => {
-		if (pathname) {
-			menuOpen = false;
-			openDropdown = null;
-		}
+	function handleKeydown(event: KeyboardEvent) {
+		if (menuOpen && event.key === 'Escape') closeMenu();
+	}
+
+	afterNavigate(() => {
+		menuOpen = false;
+		openDropdown = null;
 	});
 
 	$effect(() => {
 		if (!menuOpen) return;
 
-		const onKeydown = (event: KeyboardEvent) => {
-			if (event.key === 'Escape') closeMenu();
-		};
-
 		document.body.style.overflow = 'hidden';
-		window.addEventListener('keydown', onKeydown);
 
 		return () => {
 			document.body.style.overflow = '';
-			window.removeEventListener('keydown', onKeydown);
 		};
 	});
 </script>
 
+<svelte:window onkeydown={handleKeydown} />
+
 <header class="site-header">
-	<a class="site-brand" href={brandHref}>Briefly</a>
+	<a class="site-brand" href={resolve(brandHref)} aria-label="ClienTell home">
+		<BrandLogo />
+	</a>
 
 	<div class="site-header-cluster">
 		{#if hasNav}
@@ -105,7 +118,7 @@
 						<div class="nav-dropdown-menu" class:is-open={openDropdown === 'manage'}>
 							<div class="nav-dropdown-panel">
 								{#each manageLinks as link (link.href)}
-									<a href={link.href} class:active={navLinkActive(link.href)}>{link.label}</a>
+									<a href={resolve(link.href)} class:active={navLinkActive(link.href)}>{link.label}</a>
 								{/each}
 							</div>
 						</div>
@@ -131,8 +144,35 @@
 						<div class="nav-dropdown-menu" class:is-open={openDropdown === 'submissions'}>
 							<div class="nav-dropdown-panel">
 								{#each submissionLinks as link (link.href)}
-									<a href={link.href} class:active={submissionLinkActive(link.href)}>{link.label}</a>
+									<a href={resolve(link.href)} class:active={submissionLinkActive(link.href)}>{link.label}</a>
 								{/each}
+							</div>
+						</div>
+					</div>
+
+					<div
+						class="nav-dropdown nav-dropdown--desktop"
+						role="group"
+						aria-label="Contracts menu"
+						onmouseenter={() => showDropdown('contracts')}
+						onmouseleave={() => hideDropdown('contracts')}
+					>
+						<button
+							type="button"
+							class="nav-dropdown-trigger"
+							class:active={contractsActive}
+							aria-expanded={openDropdown === 'contracts'}
+							aria-haspopup="true"
+						>
+							Contracts
+							<ChevronDown size={14} strokeWidth={2} aria-hidden="true" />
+						</button>
+						<div class="nav-dropdown-menu" class:is-open={openDropdown === 'contracts'}>
+							<div class="nav-dropdown-panel">
+								{#each contractLinks as link (link.href)}
+									<a href={resolve(link.href)} class:active={contractLinkActive(link.href)}>{link.label}</a>
+								{/each}
+								<a href={resolve('/admin/contracts/new')}>New contract</a>
 							</div>
 						</div>
 					</div>
@@ -141,7 +181,12 @@
 				<div class="nav-drawer-admin nav-drawer-admin--mobile">
 					<p class="nav-drawer-label">Manage</p>
 					{#each manageLinks as link (link.href)}
-						<a href={link.href} class="nav-drawer-link" class:active={navLinkActive(link.href)} onclick={closeMenu}>
+						<a
+							href={resolve(link.href)}
+							class="nav-drawer-link"
+							class:active={navLinkActive(link.href)}
+							onclick={closeMenu}
+						>
 							{link.label}
 						</a>
 					{/each}
@@ -149,7 +194,7 @@
 					<p class="nav-drawer-label">Submissions</p>
 					{#each submissionLinks as link (link.href)}
 						<a
-							href={link.href}
+							href={resolve(link.href)}
 							class="nav-drawer-link"
 							class:active={submissionLinkActive(link.href)}
 							onclick={closeMenu}
@@ -157,6 +202,25 @@
 							{link.label}
 						</a>
 					{/each}
+
+					<p class="nav-drawer-label">Contracts</p>
+					{#each contractLinks as link (link.href)}
+						<a
+							href={resolve(link.href)}
+							class="nav-drawer-link"
+							class:active={contractLinkActive(link.href)}
+							onclick={closeMenu}
+						>
+							{link.label}
+						</a>
+					{/each}
+					<a
+						href={resolve('/admin/contracts/new')}
+						class="nav-drawer-link"
+						onclick={closeMenu}
+					>
+						New contract
+					</a>
 
 					<form method="POST" action="/admin/logout" class="signout-form nav-drawer-signout">
 						<button type="submit" class="nav-drawer-link nav-drawer-link--button">Sign out</button>
@@ -215,22 +279,18 @@
 		padding: 0 clamp(1rem, 3vw, 1.5rem);
 		border-bottom: 1px solid var(--site-header-border);
 		background: var(--site-header-bg);
+		-webkit-backdrop-filter: blur(12px);
+		backdrop-filter: blur(12px);
 		color: var(--site-header-text);
 	}
 
 	.site-brand {
+		--brand-logo-width: clamp(7.25rem, 12vw, 8.5rem);
+
+		display: block;
 		flex-shrink: 0;
-		font-size: 0.875rem;
-		font-weight: 600;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
 		color: inherit;
 		text-decoration: none;
-		white-space: nowrap;
-	}
-
-	.site-brand:hover {
-		color: var(--site-header-accent);
 	}
 
 	.site-header-cluster {

@@ -75,7 +75,7 @@ function drawSection(
 	let currentPage = page;
 	let cursorY = y;
 
-	const headerLines = wrapText('Briefly', bold, 22, CONTENT_WIDTH);
+	const headerLines = wrapText('ClienTell', bold, 22, CONTENT_WIDTH);
 	for (const line of headerLines) {
 		({ page: currentPage, y: cursorY } = ensureSpace(currentPage, cursorY, 26, doc));
 		currentPage.drawText(line, {

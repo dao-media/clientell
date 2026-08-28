@@ -61,3 +61,19 @@ export async function fetchClientBriefs(clientId: string): Promise<ClientBriefSu
 	}
 	return (await response.json()) as ClientBriefSummary[];
 }
+
+export async function fetchClientContracts(clientId: string): Promise<ClientContractSummary[]> {
+	const response = await fetch(`/admin/clients/${clientId}/contracts`);
+	if (!response.ok) {
+		throw new Error('Could not load contracts.');
+	}
+	return (await response.json()) as ClientContractSummary[];
+}
+
+export type ClientContractSummary = {
+	id: string;
+	projectName: string;
+	status: 'draft' | 'sent' | 'signed';
+	createdAt: string;
+	sentAt: string | null;
+};

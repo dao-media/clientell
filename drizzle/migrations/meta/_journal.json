@@ -64,6 +64,20 @@
 			"when": 1750987200000,
 			"tag": "0009_unique_client_email",
 			"breakpoints": true
+		},
+		{
+			"idx": 9,
+			"version": "6",
+			"when": 1756080000000,
+			"tag": "0010_contracts",
+			"breakpoints": true
+		},
+		{
+			"idx": 10,
+			"version": "6",
+			"when": 1756166400000,
+			"tag": "0011_contract_signatures",
+			"breakpoints": true
 		}
 	]
 }

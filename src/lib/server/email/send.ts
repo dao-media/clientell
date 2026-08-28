@@ -59,7 +59,7 @@ async function sendViaBinding(
 	try {
 		await email.send({
 			to: message.to,
-			from: { email: getFromAddress(platform), name: message.fromName ?? 'Briefly' },
+			from: { email: getFromAddress(platform), name: message.fromName ?? 'ClienTell' },
 			subject: message.subject,
 			html: message.html,
 			text: message.text
@@ -90,7 +90,7 @@ async function sendViaRestApi(
 				},
 				body: JSON.stringify({
 					to: message.to,
-					from: { address: getFromAddress(platform), name: message.fromName ?? 'Briefly' },
+					from: { address: getFromAddress(platform), name: message.fromName ?? 'ClienTell' },
 					subject: message.subject,
 					html: message.html,
 					text: message.text

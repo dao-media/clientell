@@ -35,6 +35,9 @@ export async function saveClientFromForm(event: {
 	const email = normalizeEmail(String(data.get('email') ?? ''));
 	const phoneRaw = String(data.get('phone') ?? '').trim();
 	const phone = phoneRaw ? formatUsPhoneInput(phoneRaw) : '';
+	const legalName = String(data.get('legalName') ?? '').trim();
+	const entityType = String(data.get('entityType') ?? '').trim();
+	const entityState = String(data.get('entityState') ?? '').trim();
 	const selectedServices = parseCategoriesFromFormData(data, 'services');
 
 	if (!company || !contactName || !email) {
@@ -61,7 +64,10 @@ export async function saveClientFromForm(event: {
 				contactName,
 				email,
 				phone: phone || null,
-				services
+				services,
+				legalName: legalName || null,
+				entityType: entityType || null,
+				entityState: entityState || null
 			})
 			.where(eq(clients.id, clientId));
 	} else {
@@ -71,7 +77,10 @@ export async function saveClientFromForm(event: {
 			contactName,
 			email,
 			phone: phone || null,
-			services
+			services,
+			legalName: legalName || null,
+			entityType: entityType || null,
+			entityState: entityState || null
 		});
 	}
 

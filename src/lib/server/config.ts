@@ -1,7 +1,7 @@
 import { dev } from '$app/environment';
 import { env } from '$env/dynamic/private';
 
-/** Production hostname for Briefly */
+/** Production hostname for ClienTell */
 export const PRODUCTION_ORIGIN = 'https://briefly.daneoleary.com';
 
 const LOCAL_ORIGIN = 'https://localhost:5173';
@@ -50,4 +50,12 @@ export function getAdminNotificationEmail(): string {
 
 export function adminSubmissionUrl(assignmentId: string, platform?: App.Platform): string {
 	return `${getPublicOrigin(platform)}/admin/submissions/${assignmentId}`;
+}
+
+export function contractDownloadUrl(token: string, platform?: App.Platform): string {
+	return `${getPublicOrigin(platform)}/api/contracts/download/${token}`;
+}
+
+export function contractViewUrl(token: string, platform?: App.Platform): string {
+	return `${getPublicOrigin(platform)}/contracts/${token}`;
 }

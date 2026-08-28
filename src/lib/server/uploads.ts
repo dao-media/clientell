@@ -65,6 +65,19 @@ export async function readStoredFile(platform: App.Platform | undefined, key: st
 	return object;
 }
 
+export async function storeBinary(
+	platform: App.Platform | undefined,
+	key: string,
+	bytes: Uint8Array,
+	contentType: string
+) {
+	const bucket = getUploadsBucket(platform);
+	await bucket.put(key, bytes, {
+		httpMetadata: { contentType }
+	});
+	return { key, url: buildPublicFileUrl(key, platform) };
+}
+
 export function getUploadScope(locals: App.Locals): string {
 	if (locals.client) return `assignments/${locals.client.assignmentId}`;
 	if (locals.admin) return 'admin';

@@ -8,7 +8,16 @@
 	let { data, children } = $props();
 </script>
 
-<svelte:head><link rel="icon" href={favicon} /><title>Briefly</title></svelte:head>
+<svelte:head>
+	<link rel="icon" href={favicon} type="image/svg+xml" />
+	<meta
+		name="description"
+		content="ClienTell keeps client briefs, contracts, and approvals in one place."
+	/>
+	<meta name="theme-color" content="#5340ed" media="(prefers-color-scheme: light)" />
+	<meta name="theme-color" content="#191627" media="(prefers-color-scheme: dark)" />
+	<title>ClienTell</title>
+</svelte:head>
 
 <div class="app-shell site-shell">
 	<SiteHeader admin={data.auth.admin} client={data.auth.client} />

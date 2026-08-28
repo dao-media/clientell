@@ -37,7 +37,7 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 	return new Response(new Blob([pdf as BlobPart], { type: 'application/pdf' }), {
 		headers: {
 			'Content-Type': 'application/pdf',
-			'Content-Disposition': 'attachment; filename="briefly-submissions.pdf"'
+			'Content-Disposition': 'attachment; filename="clientell-submissions.pdf"'
 		}
 	});
 };

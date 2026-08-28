@@ -6,3 +6,5 @@ export function createEntityId(): string {
 export const createClientId = createEntityId;
 export const createCategoryId = createEntityId;
 export const createQuestionId = createEntityId;
+export const createClauseId = createEntityId;
+export const createContractId = createEntityId;

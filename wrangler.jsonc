@@ -2,7 +2,7 @@
 	"$schema": "./node_modules/wrangler/config-schema.json",
 	"name": "briefly",
 	"compatibility_date": "2026-06-19",
-	"compatibility_flags": ["nodejs_als"],
+	"compatibility_flags": ["nodejs_als", "nodejs_compat"],
 	"pages_build_output_dir": ".svelte-kit/cloudflare",
 	"vars": {
 		"PUBLIC_ORIGIN": "https://briefly.daneoleary.com",

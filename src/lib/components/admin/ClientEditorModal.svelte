@@ -8,8 +8,10 @@
 	import Alert from '$lib/components/ui/Alert.svelte';
 	import {
 		fetchClientBriefs,
+		fetchClientContracts,
 		fetchSubmissionDetail,
 		type ClientBriefSummary,
+		type ClientContractSummary,
 		type SubmissionDetail
 	} from '$lib/admin/submission-detail';
 	import { formatUsPhoneInput } from '$lib/phone';
@@ -26,6 +28,9 @@
 		email: string;
 		phone: string;
 		services: string[];
+		legalName?: string | null;
+		entityType?: string | null;
+		entityState?: string | null;
 	};
 
 	type ModalView = 'client' | 'brief';
@@ -52,6 +57,9 @@
 	let contactName = $state('');
 	let email = $state('');
 	let phone = $state('');
+	let legalName = $state('');
+	let entityType = $state('');
+	let entityState = $state('');
 	let selectedServices = $state<string[]>([]);
 	let saveError = $state('');
 
@@ -61,6 +69,9 @@
 	let briefs = $state<ClientBriefSummary[]>([]);
 	let briefsLoading = $state(false);
 	let briefsError = $state('');
+	let contracts = $state<ClientContractSummary[]>([]);
+	let contractsLoading = $state(false);
+	let contractsError = $state('');
 
 	let selectedAssignmentId = $state<string | null>(null);
 	let detail = $state<SubmissionDetail | null>(null);
@@ -84,6 +95,9 @@
 		contactName = client?.contactName ?? '';
 		email = client?.email ?? '';
 		phone = formatUsPhoneInput(client?.phone ?? '');
+		legalName = client?.legalName ?? '';
+		entityType = client?.entityType ?? '';
+		entityState = client?.entityState ?? '';
 		selectedServices = [...(client?.services ?? [])];
 		saveError = '';
 		resetPinMessage = '';
@@ -98,9 +112,12 @@
 
 		if (client?.id) {
 			void loadBriefs(client.id);
+			void loadContracts(client.id);
 		} else {
 			briefs = [];
 			briefsError = '';
+			contracts = [];
+			contractsError = '';
 		}
 	});
 
@@ -157,6 +174,19 @@
 		}
 	}
 
+	async function loadContracts(clientId: string) {
+		contractsLoading = true;
+		contractsError = '';
+		try {
+			contracts = await fetchClientContracts(clientId);
+		} catch (loadErr) {
+			contracts = [];
+			contractsError = loadErr instanceof Error ? loadErr.message : 'Could not load contracts.';
+		} finally {
+			contractsLoading = false;
+		}
+	}
+
 	async function loadDetail(assignmentId: string) {
 		detailLoading = true;
 		detailError = '';
@@ -179,6 +209,9 @@
 		formData.set('contactName', contactName.trim());
 		formData.set('email', email.trim());
 		formData.set('phone', phone.trim());
+		formData.set('legalName', legalName.trim());
+		formData.set('entityType', entityType.trim());
+		formData.set('entityState', entityState.trim());
 		for (const serviceId of selectedServices) {
 			formData.append('services', serviceId);
 		}
@@ -216,6 +249,21 @@
 
 	async function savePhone(value: string) {
 		phone = value;
+		return persistClient();
+	}
+
+	async function saveLegalName(value: string) {
+		legalName = value;
+		return persistClient();
+	}
+
+	async function saveEntityType(value: string) {
+		entityType = value;
+		return persistClient();
+	}
+
+	async function saveEntityState(value: string) {
+		entityState = value;
 		return persistClient();
 	}
 
@@ -343,6 +391,24 @@
 										placeholder="Optional"
 										onsave={savePhone}
 									/>
+									<InlineEditableField
+										label="Legal name"
+										value={legalName}
+										placeholder="Entity or individual legal name"
+										onsave={saveLegalName}
+									/>
+									<InlineEditableField
+										label="Entity type"
+										value={entityType}
+										placeholder="LLC, corp, individual…"
+										onsave={saveEntityType}
+									/>
+									<InlineEditableField
+										label="Entity state"
+										value={entityState}
+										placeholder="e.g. West Virginia"
+										onsave={saveEntityState}
+									/>
 
 									<div class="inline-field services-field" class:inline-field--editing={editingServices}>
 										<span class="inline-field-label">Services</span>
@@ -433,6 +499,43 @@
 															<ChevronRight size={18} strokeWidth={2} aria-hidden="true" />
 														</div>
 													</button>
+												</li>
+											{/each}
+										</ul>
+									{/if}
+								</section>
+
+								<section class="briefs-section" aria-label="Client contracts">
+									<div class="briefs-section-header">
+										<h3>Contracts</h3>
+										<Btn
+											variant="secondary"
+											size="small"
+											href="/admin/contracts/new{client?.id ? `?client=${client.id}` : ''}"
+										>
+											New contract
+										</Btn>
+									</div>
+
+									{#if contractsLoading}
+										<p class="briefs-status">Loading contracts…</p>
+									{:else if contractsError}
+										<Alert variant="error" title="Could not load contracts" subtitle={contractsError} />
+									{:else if contracts.length === 0}
+										<p class="briefs-status">No contracts yet for this client.</p>
+									{:else}
+										<ul class="brief-list">
+											{#each contracts as item (item.id)}
+												<li>
+													<a class="brief-row" href="/admin/contracts/{item.id}">
+														<div class="brief-row-main">
+															<p class="brief-row-title">{item.projectName}</p>
+															<p class="brief-row-meta">
+																{item.status} · {formatRelativeTime(new Date(item.createdAt))}
+															</p>
+														</div>
+														<ChevronRight size={18} strokeWidth={2} aria-hidden="true" />
+													</a>
 												</li>
 											{/each}
 										</ul>
@@ -813,6 +916,7 @@
 		border-radius: var(--radius-lg);
 		background: var(--color-surface);
 		color: inherit;
+		text-decoration: none;
 		font: inherit;
 		text-align: left;
 		cursor: pointer;

@@ -1,5 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import { redirectAuthenticatedUser } from '$lib/server/auth/routing';
+import { ensureClausesSeeded } from '$lib/server/contract/ensure-clauses';
 import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async ({ locals, url, setHeaders }) => {
@@ -12,6 +13,8 @@ export const load: LayoutServerLoad = async ({ locals, url, setHeaders }) => {
 	if (!locals.admin) {
 		redirect(303, '/');
 	}
+
+	await ensureClausesSeeded(locals.db);
 
 	return {};
 };
