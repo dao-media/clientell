@@ -3,6 +3,7 @@
 	import { page } from '$app/stores';
 	import favicon from '$lib/assets/favicon.svg';
 	import SiteHeader from '$lib/components/SiteHeader.svelte';
+	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
 	import './layout.css';
 	import '$lib/styles/client-brief.css';
 
@@ -71,9 +72,16 @@
 		</div>
 	{/if}
 	<SiteHeader admin={data.auth.admin} client={data.auth.client} />
-	<main class="site-main">
+	<main class="site-main" class:site-main--with-fab={Boolean(data.caseStudyUrl)}>
 		{@render children()}
 	</main>
+
+	{#if data.caseStudyUrl}
+		<a class="case-study-fab" href={data.caseStudyUrl}>
+			<ArrowLeft size={18} strokeWidth={2.25} aria-hidden="true" />
+			<span>Case study</span>
+		</a>
+	{/if}
 </div>
 
 <style>
@@ -152,5 +160,62 @@
 	.site-main {
 		flex: 1;
 		width: 100%;
+	}
+
+	/* Leave room so the floating button never covers the last of the page content. */
+	.site-main--with-fab {
+		padding-bottom: calc(var(--layout-padding-y) + 4.5rem);
+	}
+
+	/* Sandbox only: floating link back to the portfolio case study. */
+	.case-study-fab {
+		position: fixed;
+		left: max(1rem, calc(env(safe-area-inset-left, 0px) + 1rem));
+		bottom: max(1rem, calc(env(safe-area-inset-bottom, 0px) + 1rem));
+		z-index: 7000;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		min-height: 3rem;
+		padding: 0 1.125rem 0 0.875rem;
+		border: 1px solid rgb(255 255 255 / 35%);
+		border-radius: 999px;
+		/* Brand blurple in both themes: white text is 6.3:1. */
+		background: var(--brand-blurple);
+		color: #ffffff;
+		font-size: 0.9375rem;
+		font-weight: 600;
+		letter-spacing: -0.005em;
+		text-decoration: none;
+		box-shadow:
+			0 6px 16px rgb(24 20 60 / 28%),
+			0 1px 3px rgb(24 20 60 / 20%);
+		transition:
+			transform 0.15s ease,
+			box-shadow 0.15s ease,
+			background-color 0.15s ease;
+	}
+
+	.case-study-fab:hover {
+		background: var(--brand-blurple-deep);
+		transform: translateY(-1px);
+		box-shadow:
+			0 10px 22px rgb(24 20 60 / 32%),
+			0 2px 4px rgb(24 20 60 / 20%);
+	}
+
+	.case-study-fab:focus-visible {
+		outline: 3px solid var(--color-focus-ring);
+		outline-offset: 3px;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.case-study-fab {
+			transition: none;
+		}
+
+		.case-study-fab:hover {
+			transform: none;
+		}
 	}
 </style>
