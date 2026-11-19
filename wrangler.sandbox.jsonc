@@ -15,7 +15,9 @@
 	"vars": {
 		"SANDBOX_MODE": "1",
 		// Host only — the app appends its base path (/clientell) itself.
-		"PUBLIC_ORIGIN": "https://sandbox.daneoleary.com"
+		"PUBLIC_ORIGIN": "https://sandbox.daneoleary.com",
+		// Where the "Back to case study" button goes. Leave empty to hide the button.
+		"CASE_STUDY_URL": "https://daneoleary.com/work/clientell"
 	},
 	// Lives under a path so future demos can share the host (sandbox.daneoleary.com/<app>).
 	// Needs a proxied DNS record for sandbox.daneoleary.com (see SETUP.md → Portfolio sandbox).

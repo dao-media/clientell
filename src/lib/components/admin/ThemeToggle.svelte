@@ -17,7 +17,15 @@
 	 * Wide screens: a three-option segmented switch (System / Light / Dark).
 	 * Narrow screens: one button that cycles, so the header still fits.
 	 */
-	let { iconOnly = false }: { compact?: boolean; iconOnly?: boolean } = $props();
+	let {
+		iconOnly = false,
+		alwaysExpanded = false
+	}: {
+		compact?: boolean;
+		iconOnly?: boolean;
+		/** Show the full System/Light/Dark switch at every width (used when the header has room). */
+		alwaysExpanded?: boolean;
+	} = $props();
 
 	const OPTIONS: Array<{ value: ThemeSetting; label: string; icon: typeof Sun }> = [
 		{ value: 'system', label: 'System', icon: Monitor },
@@ -55,7 +63,7 @@
 	const nextLabel = $derived(OPTIONS.find((option) => option.value === cycleTheme(setting))?.label);
 </script>
 
-<div class="theme-switch" class:theme-switch--icon-only={iconOnly}>
+<div class="theme-switch" class:theme-switch--icon-only={iconOnly} class:theme-switch--expanded={alwaysExpanded}>
 	<div class="theme-segmented" role="group" aria-label="Color theme">
 		{#each OPTIONS as option (option.value)}
 			{@const OptionIcon = option.icon}
@@ -143,12 +151,18 @@
 	}
 
 	@media (max-width: 639px) {
-		.theme-segmented {
+		.theme-switch:not(.theme-switch--expanded) .theme-segmented {
 			display: none;
 		}
 
-		.theme-cycle {
+		.theme-switch:not(.theme-switch--expanded) .theme-cycle {
 			display: inline-flex;
+		}
+
+		/* Signed-out headers have room: keep all three options, with comfortable touch targets. */
+		.theme-switch--expanded .theme-option {
+			width: 2.25rem;
+			height: 2.25rem;
 		}
 	}
 </style>

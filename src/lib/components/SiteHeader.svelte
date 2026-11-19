@@ -284,7 +284,7 @@
 					<button type="submit" class="admin-signout">Sign out</button>
 				</form>
 			{/if}
-			<ThemeToggle iconOnly />
+			<ThemeToggle iconOnly alwaysExpanded={!hasNav} />
 			{#if hasNav}
 				<button
 					type="button"
