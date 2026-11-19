@@ -1,4 +1,5 @@
 import { error, fail, redirect } from '@sveltejs/kit';
+import { getEmailOwner } from '$lib/server/admin-profile';
 import { and, eq } from 'drizzle-orm';
 import { formatCategoryList, normalizeCategoryDefinitions, parseCategoryIds } from '$lib/categories';
 import { redirectClientIfPinChangeRequired } from '$lib/server/auth/portal-login';
@@ -231,8 +232,10 @@ export const actions: Actions = {
 					normalizeCategoryDefinitions(row.setCategories)
 				) || row.questionSet.title;
 
+			const owner = await getEmailOwner(locals.db);
 			void sendBriefSubmittedNotification(platform, {
-				to: getAdminNotificationEmail(),
+				owner,
+				to: getAdminNotificationEmail(owner.fromProfile ? owner.supportEmail : null),
 				clientCompany: row.client.company,
 				clientContact: row.client.contactName,
 				briefTitle,

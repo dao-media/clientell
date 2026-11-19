@@ -13,6 +13,7 @@ import {
 } from '$lib/debug/auth-debug';
 import { isValidPin, normalizePinInput } from '$lib/utils/pin';
 import type { Actions, PageServerLoad } from './$types';
+import { base } from '$app/paths';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const session = requireClient(locals);
@@ -29,7 +30,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	});
 
 	if (!assignment?.pinMustChange) {
-		redirect(303, '/portal/brief');
+		redirect(303, `${base}/portal/docs`);
 	}
 };
 
@@ -78,6 +79,13 @@ export const actions: Actions = {
 
 		const { hash, salt } = await hashPin(pin);
 
+		// One PIN per client: apply it to every brief they have (matches admin "Reset PIN").
+		const [current] = await locals.db
+			.select({ clientId: assignments.clientId })
+			.from(assignments)
+			.where(eq(assignments.id, session.assignmentId))
+			.limit(1);
+
 		await locals.db
 			.update(assignments)
 			.set({
@@ -85,11 +93,15 @@ export const actions: Actions = {
 				pinSalt: salt,
 				pinMustChange: false
 			})
-			.where(eq(assignments.id, session.assignmentId));
+			.where(
+				current
+					? eq(assignments.clientId, current.clientId)
+					: eq(assignments.id, session.assignmentId)
+			);
 
 		authDebug('set-pin-saved', { assignmentId: session.assignmentId });
 
 		await setClientSession(cookies, url, session.assignmentId, loginDurationFromForm(data), request);
-		redirect(303, '/portal/brief');
+		redirect(303, `${base}/portal/docs`);
 	}
 };

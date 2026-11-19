@@ -1,4 +1,5 @@
 import { error, fail, redirect } from '@sveltejs/kit';
+import { getEmailOwner } from '$lib/server/admin-profile';
 import { eq } from 'drizzle-orm';
 import { contractViewUrl } from '$lib/server/config';
 import { sendContractReadyEmail } from '$lib/server/email/reminder';
@@ -14,6 +15,7 @@ import {
 } from '$lib/server/contract/store';
 import { contracts } from '$lib/server/db/schema';
 import type { Actions, PageServerLoad } from './$types';
+import { base } from '$app/paths';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
 	const detail = await getContractDetail(locals.db, params.id);
@@ -49,7 +51,7 @@ export const actions: Actions = {
 				error: `Cannot export until these fields are filled: ${result.missing.join(', ')}`
 			});
 		}
-		redirect(303, `/admin/contracts/${params.id}/pdf`);
+		redirect(303, `${base}/admin/contracts/${params.id}/pdf`);
 	},
 
 	send: async ({ locals, params, platform }) => {
@@ -66,6 +68,7 @@ export const actions: Actions = {
 
 		const token = await ensureDownloadToken(locals.db, params.id);
 		const emailResult = await sendContractReadyEmail(platform, {
+			owner: await getEmailOwner(locals.db),
 			to: detail.client.email,
 			contactName: detail.client.contactName,
 			projectName: detail.contract.projectName,

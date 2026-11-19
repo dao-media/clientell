@@ -13,6 +13,7 @@ import { ensureBriefWorkspace } from '$lib/server/brief-workspace';
 import { registerPageDataDepends } from '$lib/admin/refresh-data';
 import { questionSets, questions } from '$lib/server/db/schema';
 import type { Actions, PageServerLoad } from './$types';
+import { base } from '$app/paths';
 
 function persistCategories(categories: QuestionCategory[]) {
 	return categories;
@@ -26,7 +27,7 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 	registerPageDataDepends(depends, url.pathname, 'briefly:questions', 'briefly:dashboard');
 
 	if (url.searchParams.has('all') || url.searchParams.has('set')) {
-		redirect(303, '/admin/question-sets');
+		redirect(303, `${base}/admin/question-sets`);
 	}
 
 	const activeSet = await ensureBriefWorkspace(locals.db);

@@ -1,5 +1,7 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import Btn from '$lib/components/Btn.svelte';
+	import CommsGate from '$lib/components/sandbox/CommsGate.svelte';
 	import AuthDebugPanel from '$lib/components/auth/AuthDebugPanel.svelte';
 	import Alert from '$lib/components/ui/Alert.svelte';
 	import PageShell from '$lib/components/layout/PageShell.svelte';
@@ -9,12 +11,6 @@
 	import { normalizeEmail } from '$lib/utils';
 
 	let { form }: { form: ActionData } = $props();
-
-	let formEl = $state<HTMLFormElement | null>(null);
-
-	$effect(() => {
-		return bindAuthFormDebug(formEl, 'forgot-pin');
-	});
 
 	function onSubmit(event: SubmitEvent) {
 		event.preventDefault();
@@ -46,28 +42,37 @@
 			<Alert variant="success" title="Check your email" subtitle={form.message} />
 		{/if}
 
-		<form bind:this={formEl} method="POST" class="form-group" novalidate onsubmit={onSubmit}>
-			<div>
-				<label class="label" for="email">Email</label>
+		<form
+			use:bindAuthFormDebug={'forgot-pin'}
+			method="POST"
+			class="form-group"
+			novalidate
+			onsubmit={onSubmit}
+		>
+			<div class="float-field">
 				<input
 					class="field"
+					placeholder=" "
 					id="email"
 					name="email"
 					type="text"
 					autocomplete="off"
 					spellcheck="false"
 				/>
+				<label class="float-field__label" for="email">Email</label>
 			</div>
 
 			{#if form?.error}
-				<p class="form-error">{form.error}</p>
+				<p class="form-error" role="alert">{form.error}</p>
 			{/if}
 
 			<div class="form-actions">
-				<Btn class="w-full" type="button" onclick={() => formEl && submitAuthFormElement(formEl, 'forgot-pin')}>
-					Send temporary PIN
+<CommsGate>
+				<Btn class="w-full" type="submit">
+					Send new PIN
 				</Btn>
-				<Btn class="w-full" variant="secondary" href="/portal">Back to sign in</Btn>
+</CommsGate>
+				<Btn class="w-full" variant="secondary" href="{base}/portal">Back</Btn>
 			</div>
 		</form>
 

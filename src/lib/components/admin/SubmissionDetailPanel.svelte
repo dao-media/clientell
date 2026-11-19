@@ -1,5 +1,8 @@
 <script lang="ts">
+	import { withBase } from '$lib/paths';
 	import { enhance } from '$app/forms';
+	import CommsGate from '$lib/components/sandbox/CommsGate.svelte';
+	import { page } from '$app/state';
 	import { invalidateAll } from '$app/navigation';
 	import AttachmentPill from '$lib/components/AttachmentPill.svelte';
 	import Btn from '$lib/components/Btn.svelte';
@@ -46,7 +49,7 @@
 	const statusVariant = $derived(
 		detail?.response?.status === 'submitted' ? 'submitted' : 'gray'
 	);
-	const actionBase = $derived(detail ? `/admin/submissions/${detail.assignment.id}` : '');
+	const actionBase = $derived(detail ? withBase(`/admin/submissions/${detail.assignment.id}`) : '');
 	const companyLabel = $derived(clientCompany || detail?.client.company || '');
 	const briefTitle = $derived(
 		detail
@@ -63,10 +66,15 @@
 		if (result.type === 'success' && result.data) {
 			const data = result.data as Record<string, unknown>;
 			if (data.emailResult && typeof data.emailResult === 'object') {
-				const emailResult = data.emailResult as { ok: boolean; message: string };
+				const emailResult = data.emailResult as { ok: boolean; message: string; simulated?: boolean };
+				const sandbox = Boolean(page.data.sandbox);
 				return {
 					variant: emailResult.ok ? 'success' : 'error',
-					title: emailResult.ok ? 'Email sent' : 'Email failed',
+					title: emailResult.ok
+						? sandbox
+							? 'Marked as sent — no email goes out in the sandbox'
+							: 'Email sent'
+						: 'Email failed',
 					subtitle: emailResult.message
 				} as const;
 			}
@@ -180,6 +188,7 @@
 					<Btn type="submit" icon={Mail}>Send brief</Btn>
 				</form>
 			{:else if detail.assignment.canResendBrief}
+<CommsGate>
 				<form
 					method="POST"
 					action="{actionBase}?/sendBrief"
@@ -191,6 +200,7 @@
 				>
 					<Btn type="submit" icon={Mail}>Resend brief</Btn>
 				</form>
+</CommsGate>
 			{/if}
 
 			<Btn variant="secondary" href="{actionBase}/preview" target="_blank" rel="noopener" icon={Eye}>
@@ -202,6 +212,7 @@
 			</Btn>
 
 			{#if detail.assignment.sentAt}
+<CommsGate>
 				<form
 					method="POST"
 					action="{actionBase}?/sendReminder"
@@ -213,6 +224,7 @@
 				>
 					<Btn type="submit" variant="secondary" icon={Mail}>Send reminder</Btn>
 				</form>
+</CommsGate>
 			{/if}
 
 			{#if detail.assignment.isActive}
@@ -225,7 +237,7 @@
 						};
 					}}
 				>
-					<Btn type="submit" variant="ghost" icon={CircleX}>Close submission</Btn>
+					<Btn type="submit" variant="ghost" icon={CircleX}>Deactivate</Btn>
 				</form>
 			{/if}
 

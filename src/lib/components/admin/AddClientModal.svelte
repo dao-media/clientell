@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { withBase } from '$lib/paths';
+	import { base } from '$app/paths';
 	import { enhance } from '$app/forms';
 	import CategoryTagPicker from '$lib/components/admin/CategoryTagPicker.svelte';
 	import Btn from '$lib/components/Btn.svelte';
@@ -13,7 +15,7 @@
 		open = $bindable(false),
 		session = 0,
 		serviceOptions = [],
-		action = '/admin/clients?/saveClient',
+		action = withBase('/admin/clients?/saveClient'),
 		onclients,
 		onsaved,
 		onclose
@@ -189,8 +191,8 @@
 						/>
 						{#if emailTaken}
 							<div class="email-taken-actions">
-								<Btn variant="secondary" href="/portal">Sign in to portal</Btn>
-								<Btn variant="ghost" href="/portal/forgot-pin">Forgot PIN</Btn>
+								<Btn variant="secondary" href="{base}/portal">Sign in</Btn>
+								<Btn variant="ghost" href="{base}/portal/forgot-pin">Forgot PIN</Btn>
 							</div>
 						{/if}
 					{/if}

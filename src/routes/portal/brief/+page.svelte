@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import { invalidateAll } from '$app/navigation';
 	import Btn from '$lib/components/Btn.svelte';
 	import BriefReviewPanel from '$lib/components/portal/BriefReviewPanel.svelte';
@@ -9,7 +10,6 @@
 	import PageShell from '$lib/components/layout/PageShell.svelte';
 	import { buildBriefFormData, submitBriefAction } from '$lib/portal/brief-form';
 	import { isQuestionAnswered } from '$lib/utils';
-	import LogOut from '@lucide/svelte/icons/log-out';
 	import type { ActionData, PageData } from './$types';
 
 	const AUTOSAVE_DELAY_MS = 30_000;
@@ -216,13 +216,13 @@
 
 <PageShell width="content">
 	<PageHeader title="Brief" lead={briefLead}>
-		{#snippet actions()}
+		{#snippet badge()}
 			<StatusBadge status={data.response.status} />
-			<form id="portal-logout-form" method="POST" action="/portal/logout">
-				<Btn variant="secondary" type="submit" icon={LogOut}>Sign out</Btn>
-			</form>
 		{/snippet}
 	</PageHeader>
+
+	<!-- Sign out lives in the header nav; this hidden form lets "Finish later" save, then sign out. -->
+	<form id="portal-logout-form" method="POST" action="{base}/portal/logout" hidden></form>
 
 	{#if data.response.status === 'submitted' && !data.assignment.allowEditsAfterSubmit}
 		<div class="card alert-success">

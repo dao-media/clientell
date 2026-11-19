@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { appPath } from '$lib/paths';
+	import { base } from '$app/paths';
 	import { afterNavigate } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/stores';
@@ -16,27 +18,36 @@
 	const manageLinks = [
 		{ href: '/admin/clients', label: 'Clients' },
 		{ href: '/admin/question-sets', label: 'Briefs' },
-		{ href: '/admin/clauses', label: 'Clauses' }
+		{ href: '/admin/clauses', label: 'Clauses' },
+		{ href: '/admin/profile', label: 'Profile' }
 	] as const;
 
 	const submissionLinks = SUBMISSION_STATUS_FILTERS.map(({ href, label }) => ({ href, label }));
 	const contractLinks = CONTRACT_STATUS_FILTERS.map(({ href, label }) => ({ href, label }));
 
-	const pathname = $derived($page.url.pathname);
+	const pathname = $derived(appPath($page.url.pathname));
 	const search = $derived($page.url.search);
 	const brandHref = '/';
+	/** Shown after the wordmark: "ClienTell Admin" / "ClienTell Client". */
+	const brandRole = $derived(admin ? 'Admin' : client ? 'Client' : '');
 	const showAdminNav = $derived(admin);
-	const hasNav = $derived(showAdminNav);
+	const showClientNav = $derived(client && !admin);
+	// Phones put every signed-in nav (admin or client) behind the menu button.
+	const hasNav = $derived(showAdminNav || showClientNav);
 	const manageActive = $derived(
 		pathname.startsWith('/admin/clients') ||
 			pathname.startsWith('/admin/question-sets') ||
 			pathname.startsWith('/admin/briefs') ||
-			pathname.startsWith('/admin/clauses')
+			pathname.startsWith('/admin/clauses') ||
+			pathname.startsWith('/admin/profile')
 	);
 	const submissionsActive = $derived(pathname.startsWith('/admin/submissions'));
 	const contractsActive = $derived(pathname.startsWith('/admin/contracts'));
 
 	let menuOpen = $state(false);
+	let headerEl = $state<HTMLElement | null>(null);
+	// Where the drawer starts: the header's real bottom edge (the sandbox banner can sit above it).
+	let drawerTop = $state(0);
 	let openDropdown = $state<'manage' | 'submissions' | 'contracts' | null>(null);
 
 	function navLinkActive(href: string): boolean {
@@ -52,6 +63,7 @@
 	}
 
 	function toggleMenu() {
+		if (!menuOpen && headerEl) drawerTop = Math.max(0, headerEl.getBoundingClientRect().bottom);
 		menuOpen = !menuOpen;
 	}
 
@@ -89,14 +101,41 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<header class="site-header">
-	<a class="site-brand" href={resolve(brandHref)} aria-label="ClienTell home">
+<header class="site-header" bind:this={headerEl} style:--nav-drawer-top="{drawerTop}px">
+	<a class="site-brand" href={resolve(brandHref)} aria-label="ClienTell {brandRole ? `${brandRole} ` : ''}home">
 		<BrandLogo />
+		{#if brandRole}
+			<span class="site-brand-role" aria-hidden="true">{brandRole}</span>
+		{/if}
 	</a>
 
 	<div class="site-header-cluster">
 		{#if hasNav}
 			<div id="site-nav-drawer" class="site-header-nav" class:site-header-nav--open={menuOpen}>
+				{#if showClientNav}
+					<div class="nav-drawer-admin nav-drawer-admin--mobile">
+						<a
+							href={resolve('/portal/docs')}
+							class="nav-drawer-link"
+							class:active={pathname.startsWith('/portal/docs') || pathname.startsWith('/portal/brief')}
+							onclick={closeMenu}
+						>
+							My Docs
+						</a>
+						<a
+							href={resolve('/portal/profile')}
+							class="nav-drawer-link"
+							class:active={pathname.startsWith('/portal/profile')}
+							onclick={closeMenu}
+						>
+							Profile
+						</a>
+						<form method="POST" action="{base}/portal/logout" class="signout-form nav-drawer-signout">
+							<button type="submit" class="nav-drawer-link nav-drawer-link--button">Sign out</button>
+						</form>
+					</div>
+				{/if}
+				{#if showAdminNav}
 				<nav class="site-nav site-nav-admin" aria-label="Admin">
 					<div
 						class="nav-dropdown nav-dropdown--desktop"
@@ -222,16 +261,26 @@
 						New contract
 					</a>
 
-					<form method="POST" action="/admin/logout" class="signout-form nav-drawer-signout">
+					<form method="POST" action="{base}/admin/logout" class="signout-form nav-drawer-signout">
 						<button type="submit" class="nav-drawer-link nav-drawer-link--button">Sign out</button>
 					</form>
 				</div>
+				{/if}
 			</div>
 		{/if}
 
 		<div class="site-header-end" class:site-header-end--solo={!hasNav}>
+			{#if showClientNav}
+				<nav class="client-nav" aria-label="Client">
+					<a href={resolve('/portal/docs')} class:active={pathname.startsWith('/portal/docs') || pathname.startsWith('/portal/brief')}>My Docs</a>
+					<a href={resolve('/portal/profile')} class:active={pathname.startsWith('/portal/profile')}>Profile</a>
+					<form method="POST" action="{base}/portal/logout" class="signout-form">
+						<button type="submit" class="admin-signout">Sign out</button>
+					</form>
+				</nav>
+			{/if}
 			{#if showAdminNav}
-				<form method="POST" action="/admin/logout" class="signout-form signout-form--desktop">
+				<form method="POST" action="{base}/admin/logout" class="signout-form signout-form--desktop">
 					<button type="submit" class="admin-signout">Sign out</button>
 				</form>
 			{/if}
@@ -278,19 +327,55 @@
 		min-height: var(--site-header-height, 3.25rem);
 		padding: 0 clamp(1rem, 3vw, 1.5rem);
 		border-bottom: 1px solid var(--site-header-border);
+		color: var(--site-header-text);
+		isolation: isolate;
+	}
+
+	/*
+	 * The frosted background lives on a pseudo-element. backdrop-filter on the header itself
+	 * would make it the containing block for position:fixed children, trapping the mobile
+	 * drawer and its backdrop inside the 52px header.
+	 */
+	.site-header::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		z-index: -1;
 		background: var(--site-header-bg);
 		-webkit-backdrop-filter: blur(12px);
 		backdrop-filter: blur(12px);
-		color: var(--site-header-text);
+		pointer-events: none;
 	}
 
 	.site-brand {
 		--brand-logo-width: clamp(7.25rem, 12vw, 8.5rem);
 
-		display: block;
+		display: flex;
+		align-items: flex-end;
+		gap: calc(var(--brand-logo-width) * 0.055);
 		flex-shrink: 0;
 		color: inherit;
 		text-decoration: none;
+	}
+
+	/*
+	 * Role label set to match the wordmark: cap height ≈ 0.145 × logo width, Inter caps are
+	 * 0.727em, so font-size ≈ 0.2 × logo width. Regular weight against the bold wordmark.
+	 */
+	.site-brand-role {
+		color: var(--site-header-text);
+		font-size: calc(var(--brand-logo-width) * 0.2);
+		font-weight: 400;
+		line-height: 1;
+		letter-spacing: -0.015em;
+		white-space: nowrap;
+		transform: translateY(var(--brand-role-nudge, 0.06em));
+	}
+
+	.site-brand:focus-visible {
+		outline: 2px solid var(--color-focus-ring);
+		outline-offset: 4px;
+		border-radius: var(--radius-sm, 4px);
 	}
 
 	.site-header-cluster {
@@ -375,6 +460,40 @@
 		padding: 0.35rem 0.5rem;
 		border-radius: var(--radius-md);
 		white-space: nowrap;
+	}
+
+	.client-nav {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+	}
+
+	.client-nav a {
+		padding: 0.35rem 0.6rem;
+		border-radius: var(--radius-md);
+		color: var(--site-header-muted);
+		font-size: 0.875rem;
+		font-weight: 500;
+		text-decoration: none;
+		white-space: nowrap;
+	}
+
+	.client-nav a:hover,
+	.client-nav a.active {
+		color: var(--site-header-accent);
+		background: var(--color-surface-hover);
+	}
+
+	@media (max-width: 480px) {
+		.client-nav {
+			gap: 0;
+		}
+
+		.client-nav a,
+		.client-nav .admin-signout {
+			padding: 0.3rem 0.4rem;
+			font-size: 0.8125rem;
+		}
 	}
 
 	.admin-signout:hover {
@@ -510,7 +629,7 @@
 	.nav-drawer-backdrop {
 		position: fixed;
 		inset: 0;
-		top: var(--site-header-height, 3.25rem);
+		top: var(--nav-drawer-top, var(--site-header-height, 3.25rem));
 		z-index: 8990;
 		border: 0;
 		padding: 0;
@@ -542,13 +661,14 @@
 
 		.signout-form--desktop,
 		.site-nav-admin,
-		.nav-dropdown--desktop {
+		.nav-dropdown--desktop,
+		.client-nav {
 			display: none;
 		}
 
 		.site-header-nav {
 			position: fixed;
-			top: var(--site-header-height, 3.25rem);
+			top: var(--nav-drawer-top, var(--site-header-height, 3.25rem));
 			right: 0;
 			bottom: 0;
 			z-index: 9005;
@@ -559,7 +679,8 @@
 			width: min(18rem, 100vw);
 			padding: 1rem;
 			border-left: 1px solid var(--site-header-border);
-			background: var(--site-header-bg);
+			/* Opaque: page content must not show through the open menu. */
+			background: var(--color-surface);
 			box-shadow: -12px 0 32px rgb(15 23 42 / 12%);
 			overflow-y: auto;
 			transform: translateX(100%);

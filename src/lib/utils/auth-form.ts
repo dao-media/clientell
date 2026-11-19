@@ -58,8 +58,8 @@ function readAuthFormData(form: HTMLFormElement): FormData {
 	const pin = readPinFromForm(form, 'pin');
 	const confirmPin = readPinFromForm(form, 'confirmPin');
 
-	const duration =
-		form.querySelector<HTMLSelectElement>('select[name="loginDuration"]')?.value ?? '';
+	const durationSelect = form.querySelector('select[name="loginDuration"]');
+	const duration = durationSelect instanceof HTMLSelectElement ? durationSelect.value : '';
 	const password = form.querySelector<HTMLInputElement>('input[name="password"]')?.value ?? '';
 
 	const body = new FormData();
@@ -195,9 +195,7 @@ export function submitAuthFormOnEnter(
 	void submitAuthFormElement(form, formId);
 }
 
-export function bindAuthFormDebug(form: HTMLFormElement | null, formId: string) {
-	if (!form) return;
-
+export function bindAuthFormDebug(form: HTMLFormElement, formId: string) {
 	form.noValidate = true;
 
 	for (const input of form.querySelectorAll('input, select, textarea')) {
@@ -206,5 +204,21 @@ export function bindAuthFormDebug(form: HTMLFormElement | null, formId: string) 
 		}
 	}
 
-	return attachAuthFormDebug(form, formId);
+	const detach = attachAuthFormDebug(form, formId);
+	return { destroy: detach };
+}
+
+export function submitAuthFormFromClick(
+	event: Event,
+	formId: string,
+	bound?: HTMLFormElement | null
+) {
+	const fromButton =
+		event.currentTarget instanceof HTMLElement ? event.currentTarget.closest('form') : null;
+	const form = bound ?? fromButton;
+	if (!(form instanceof HTMLFormElement)) {
+		authDebug('submit-aborted', { formId, reason: 'form-missing' });
+		return;
+	}
+	void submitAuthFormElement(form, formId);
 }

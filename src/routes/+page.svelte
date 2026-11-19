@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import Btn from '$lib/components/Btn.svelte';
 	import ForgotPinLink from '$lib/components/auth/ForgotPinLink.svelte';
 	import LoginDurationSelect from '$lib/components/auth/LoginDurationSelect.svelte';
@@ -9,13 +10,20 @@
 	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
 	import ArrowRight from '@lucide/svelte/icons/arrow-right';
 	import LogIn from '@lucide/svelte/icons/log-in';
-	import type { ActionData } from './$types';
-	import { bindAuthFormDebug, submitAuthFormElement, submitAuthFormOnEnter } from '$lib/utils/auth-form';
+	import type { ActionData, PageData } from './$types';
+	import Alert from '$lib/components/ui/Alert.svelte';
+	import {
+		bindAuthFormDebug,
+		submitAuthFormFromClick,
+		submitAuthFormOnEnter
+	} from '$lib/utils/auth-form';
 	import AuthDebugPanel from '$lib/components/auth/AuthDebugPanel.svelte';
 
-	let { form }: { form: ActionData } = $props();
+	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	let expanded = $state<'admin' | 'portal' | null>(null);
+	// Only the initial URL (?panel=admin) decides the starting panel; later clicks own it.
+	// svelte-ignore state_referenced_locally
+	let expanded = $state<'admin' | 'portal' | null>(data.initialPanel);
 	let portalFormEl = $state<HTMLFormElement | null>(null);
 	let adminFormEl = $state<HTMLFormElement | null>(null);
 
@@ -31,14 +39,6 @@
 			lead: 'Use the primary contact email and the 6-digit PIN you received.'
 		}
 	} as const;
-
-	$effect(() => {
-		return bindAuthFormDebug(portalFormEl, 'home-portal-sign-in');
-	});
-
-	$effect(() => {
-		return bindAuthFormDebug(adminFormEl, 'home-admin-sign-in');
-	});
 
 	function expandPanel(panel: 'admin' | 'portal') {
 		expanded = panel;
@@ -83,9 +83,15 @@
 					<p class="home-tile-eyebrow">{tileCopy.admin.eyebrow}</p>
 					<h2 class="home-tile-label">{tileCopy.admin.title}</h2>
 					<p class="home-tile-desc">{tileCopy.admin.lead}</p>
+					{#if data.setupDone}
+						<Alert variant="success" title="Admin account created" subtitle="Sign in with your new password." />
+					{/if}
 
+					<!-- Enter-to-submit is delegated from the inputs inside; the inputs themselves are keyboard-accessible. -->
+					<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 					<form
 						bind:this={adminFormEl}
+						use:bindAuthFormDebug={'home-admin-sign-in'}
 						method="POST"
 						action="?/adminLogin"
 						class="form-group home-login-form"
@@ -106,8 +112,8 @@
 						<div class="form-actions">
 							<Btn
 								type="button"
-								onclick={() =>
-									adminFormEl && submitAuthFormElement(adminFormEl, 'home-admin-sign-in')}
+								onclick={(event) =>
+									submitAuthFormFromClick(event, 'home-admin-sign-in', adminFormEl)}
 							>
 								Sign in
 							</Btn>
@@ -115,14 +121,27 @@
 					</form>
 				</div>
 			{:else}
-				<button type="button" class="home-tile-trigger" onclick={() => expandPanel('admin')}>
-					<p class="home-tile-label">Admin console</p>
-					<p class="home-tile-desc">Build briefs, manage clients, and track submissions.</p>
-					<span class="home-tile-action">
-						Sign in
-						<ArrowRight size={16} strokeWidth={2} aria-hidden="true" />
-					</span>
-				</button>
+				{#if data.hasAdmin}
+					<button type="button" class="home-tile-trigger" onclick={() => expandPanel('admin')}>
+						<p class="home-tile-label">Sign in as admin</p>
+						<p class="home-tile-desc">Build briefs, manage clients, and track submissions.</p>
+						<span class="home-tile-action">
+							Sign in
+							<ArrowRight size={16} strokeWidth={2} aria-hidden="true" />
+						</span>
+					</button>
+				{:else}
+					<a class="home-tile-trigger" href="{base}/setup">
+						<p class="home-tile-label">Setup admin account</p>
+						<p class="home-tile-desc">
+							Add your name, business, and contact details. They fill the Designer slots in your contracts.
+						</p>
+						<span class="home-tile-action">
+							Get started
+							<ArrowRight size={16} strokeWidth={2} aria-hidden="true" />
+						</span>
+					</a>
+				{/if}
 			{/if}
 		</div>
 
@@ -141,9 +160,18 @@
 					<p class="home-tile-eyebrow">{tileCopy.portal.eyebrow}</p>
 					<h2 class="home-tile-label">{tileCopy.portal.title}</h2>
 					<p class="home-tile-desc">{tileCopy.portal.lead}</p>
+					{#if data.demoClient}
+						<p class="demo-creds">
+							Demo login: <code>{data.demoClient.email}</code> · PIN <code>{data.demoClient.pin}</code>.
+							Enter a wrong PIN three times to see the lockout.
+						</p>
+					{/if}
 
+					<!-- Enter-to-submit is delegated from the inputs inside; the inputs themselves are keyboard-accessible. -->
+					<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 					<form
 						bind:this={portalFormEl}
+						use:bindAuthFormDebug={'home-portal-sign-in'}
 						method="POST"
 						action="?/portalLogin"
 						class="form-group home-login-form"
@@ -155,24 +183,23 @@
 								formId: 'home-portal-sign-in'
 							})}
 					>
-						<div>
-							<label class="label" for="home-portal-email">Email</label>
+						<div class="float-field">
 							<input
 								class="field"
+								placeholder=" "
 								id="home-portal-email"
 								name="email"
 								type="text"
 								autocomplete="off"
 								spellcheck="false"
+								value={data.demoClient?.email ?? ''}
 							/>
+							<label class="float-field__label" for="home-portal-email">Email</label>
 						</div>
-						<div>
-							<label class="label" for="home-portal-pin">6-digit PIN</label>
-							<PinField id="home-portal-pin" name="pin" />
-						</div>
+						<PinField id="home-portal-pin" name="pin" label="6-digit PIN" />
 
 						{#if form?.portalError}
-							<p class="form-error">{form.portalError}</p>
+							<p class="form-error" role="alert">{form.portalError}</p>
 						{/if}
 
 						<p class="auth-helper">
@@ -185,8 +212,8 @@
 							<Btn
 								type="button"
 								icon={LogIn}
-								onclick={() =>
-									portalFormEl && submitAuthFormElement(portalFormEl, 'home-portal-sign-in')}
+								onclick={(event) =>
+									submitAuthFormFromClick(event, 'home-portal-sign-in', portalFormEl)}
 							>
 								Continue
 							</Btn>
@@ -195,8 +222,8 @@
 				</div>
 			{:else}
 				<button type="button" class="home-tile-trigger" onclick={() => expandPanel('portal')}>
-					<p class="home-tile-label">Client portal</p>
-					<p class="home-tile-desc">Sign in with email and PIN to complete or resume a brief.</p>
+					<p class="home-tile-label">Sign in as user</p>
+					<p class="home-tile-desc">Sign in with your email and PIN to see your briefs and contracts.</p>
 					<span class="home-tile-action">
 						Sign in
 						<ArrowRight size={16} strokeWidth={2} aria-hidden="true" />
@@ -273,6 +300,19 @@
 		font: inherit;
 		text-align: left;
 		cursor: pointer;
+	}
+
+	a.home-tile-trigger {
+		text-decoration: none;
+	}
+
+	.demo-creds {
+		margin: 0;
+		padding: 0.6rem 0.75rem;
+		border-radius: var(--radius-md);
+		background: var(--color-accent-soft, rgb(99 102 241 / 8%));
+		font-size: 0.8125rem;
+		line-height: 1.5;
 	}
 
 	.home-tile-trigger:hover .home-tile-action {

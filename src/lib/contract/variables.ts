@@ -1,4 +1,5 @@
 import { LEGAL_DEFAULTS } from './defaults';
+import { FALLBACK_DESIGNER, type DesignerIdentity } from './designer';
 import { formatCents } from './money';
 import { computePricing } from './pricing';
 import {
@@ -41,6 +42,8 @@ export type VariableContext = {
 	premiumFloor: number;
 	governingState: string;
 	venueCounty: string;
+	/** Owner identity from the admin profile; falls back to legacy defaults. */
+	designer?: DesignerIdentity | null;
 };
 
 const TOKEN_RE = /\{\{([a-z0-9_]+)\}\}/g;
@@ -143,15 +146,24 @@ export function buildVariableMap(ctx: VariableContext): Record<string, string> {
 		premiumFloor: ctx.premiumFloor
 	});
 
+	const designer = ctx.designer ?? FALLBACK_DESIGNER;
 	const threshold = formatCents(ctx.perItemThreshold);
 	const tier = ctx.confidentialityTier;
 
 	return {
 		effective_date: formatDate(ctx.effectiveDate ?? new Date()),
 		last_updated: formatDate(LEGAL_DEFAULTS.documentUpdatedAt),
-		designer_name: LEGAL_DEFAULTS.designerName,
-		designer_short: LEGAL_DEFAULTS.designerShort,
-		designer_display: LEGAL_DEFAULTS.designerDisplay,
+		designer_name: designer.name,
+		designer_short: designer.short,
+		designer_display: designer.display,
+		designer_business: designer.short,
+		designer_email: designer.email || '—',
+		designer_phone: designer.phone || '—',
+		designer_website: designer.website || '—',
+		designer_social_links: designer.socialLinks
+			.filter((link) => link.url.trim())
+			.map((link) => (link.label.trim() ? `${link.label.trim()}: ${link.url.trim()}` : link.url.trim()))
+			.join(' · ') || '—',
 		legal_name: ctx.legalName.trim(),
 		client_name: ctx.legalName.trim(),
 		entity_description: entityDescription(ctx),

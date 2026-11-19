@@ -1,6 +1,7 @@
 import { invalidate } from '$app/navigation';
 import { onMount } from 'svelte';
 import { adminDataKeys, type AdminDataKey } from './data-keys';
+import { withBase } from '$lib/paths';
 
 export { adminDataKeys };
 
@@ -12,8 +13,8 @@ export async function refreshAfterClientChange() {
 	await Promise.all([
 		invalidate(adminDataKeys.clients),
 		invalidate(adminDataKeys.dashboard),
-		invalidate('/admin/clients'),
-		invalidate('/admin/briefs/new')
+		invalidate(withBase('/admin/clients')),
+		invalidate(withBase('/admin/briefs/new'))
 	]);
 }
 
@@ -26,7 +27,7 @@ export async function refreshAfterQuestionChange() {
 	await Promise.all([
 		invalidate(adminDataKeys.questions),
 		invalidate(adminDataKeys.dashboard),
-		invalidate('/admin/question-sets')
+		invalidate(withBase('/admin/question-sets'))
 	]);
 }
 

@@ -1,4 +1,6 @@
-export const DANE_SUPPORT_EMAIL = 'hello@daneoleary.com';
+import type { EmailOwner } from '$lib/server/admin-profile';
+
+export type { EmailOwner };
 
 export function contactFirstName(contactName: string): string {
 	const trimmed = contactName.trim();
@@ -6,7 +8,7 @@ export function contactFirstName(contactName: string): string {
 	return trimmed.split(/\s+/)[0] ?? 'there';
 }
 
-function escapeHtml(value: string): string {
+export function escapeHtml(value: string): string {
 	return value
 		.replaceAll('&', '&amp;')
 		.replaceAll('<', '&lt;')
@@ -23,24 +25,32 @@ export function firstLoginPinNote(): { text: string; html: string } {
 	};
 }
 
-export function clientEmailSignOff(): { text: string; html: string } {
+export function clientEmailSignOff(owner: EmailOwner): { text: string; html: string } {
+	const name = escapeHtml(owner.firstName);
+	const email = escapeHtml(owner.supportEmail);
 	const text = [
 		'',
-		`If you have trouble or questions at any point, send an email to Dane at ${DANE_SUPPORT_EMAIL}.`,
+		`If you have trouble or questions at any point, send an email to ${owner.firstName} at ${owner.supportEmail}.`,
 		'',
 		'Looking forward to working with you!',
 		'',
-		'Dane'
-	].join('\n');
+		owner.displayName,
+		owner.business && owner.business !== owner.displayName ? owner.business : ''
+	]
+		.join('\n')
+		.trimEnd();
+	const business =
+		owner.business && owner.business !== owner.displayName ? `<br>${escapeHtml(owner.business)}` : '';
 	const html = `
-		<p>If you have trouble or questions at any point, send an email to Dane at <a href="mailto:${DANE_SUPPORT_EMAIL}">${DANE_SUPPORT_EMAIL}</a>.</p>
+		<p>If you have trouble or questions at any point, send an email to ${name} at <a href="mailto:${email}">${email}</a>.</p>
 		<p>Looking forward to working with you!</p>
-		<p>Dane</p>
+		<p>${escapeHtml(owner.displayName)}${business}</p>
 	`;
 	return { text, html };
 }
 
 type ClientEmailOptions = {
+	owner: EmailOwner;
 	subject: string;
 	greetingName: string;
 	intro: string;
@@ -58,7 +68,7 @@ export function buildClientEmail(options: ClientEmailOptions): {
 	const intro = options.intro;
 	const steps = options.steps;
 	const pinNote = options.afterSteps;
-	const signOff = options.includeSignOff !== false ? clientEmailSignOff() : { text: '', html: '' };
+	const signOff = options.includeSignOff !== false ? clientEmailSignOff(options.owner) : { text: '', html: '' };
 
 	const textSteps = steps.map((step, index) => `${index + 1}. ${step}`).join('\n');
 

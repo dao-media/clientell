@@ -1,5 +1,7 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import Btn from '$lib/components/Btn.svelte';
+	import CommsGate from '$lib/components/sandbox/CommsGate.svelte';
 	import Alert from '$lib/components/ui/Alert.svelte';
 	import Chip from '$lib/components/ui/Chip.svelte';
 	import AttachmentPill from '$lib/components/AttachmentPill.svelte';
@@ -63,23 +65,27 @@
 				<Btn type="submit">Send brief</Btn>
 			</form>
 		{:else if data.canResendBrief}
+<CommsGate>
 			<form method="POST" action="?/sendBrief">
 				<Btn type="submit">Resend brief</Btn>
 			</form>
+</CommsGate>
 			<p class="sent-note">First sent {formatRelativeTime(new Date(data.assignment.sentAt!))}</p>
 		{/if}
 		{#if data.assignment.sentAt}
+<CommsGate>
 			<form method="POST" action="?/sendReminder">
-				<Btn variant="secondary" type="submit">Send email reminder</Btn>
+				<Btn variant="secondary" type="submit">Send reminder</Btn>
 			</form>
 			<form method="POST" action="?/sendPortalLink">
-				<Btn variant="secondary" type="submit">Send portal link</Btn>
+				<Btn variant="secondary" type="submit">Send link</Btn>
 			</form>
+</CommsGate>
 		{/if}
-		<Btn variant="secondary" href="/admin/submissions/{data.assignment.id}/preview" target="_blank" rel="noopener" icon={Eye}>
+		<Btn variant="secondary" href="{base}/admin/submissions/{data.assignment.id}/preview" target="_blank" rel="noopener" icon={Eye}>
 			Preview brief
 		</Btn>
-		<Btn variant="ghost" href="/admin/submissions/{data.assignment.id}/pdf">Export PDF</Btn>
+		<Btn variant="ghost" href="{base}/admin/submissions/{data.assignment.id}/pdf">Export PDF</Btn>
 		<form method="POST" action="?/toggleActive">
 			<Btn variant="ghost" type="submit">
 				{data.assignment.isActive ? 'Deactivate' : 'Activate'}
@@ -87,11 +93,11 @@
 		</form>
 		{#if data.response?.status === 'submitted'}
 			<form method="POST" action="?/reopen">
-				<Btn variant="ghost" type="submit">Reopen for edits</Btn>
+				<Btn variant="ghost" type="submit">Reopen</Btn>
 			</form>
 		{/if}
 		<CancelBriefButton
-			actionBase="/admin/submissions/{data.assignment.id}"
+			actionBase="{base}/admin/submissions/{data.assignment.id}"
 			hasClientContent={data.hasClientContent}
 			briefTitle={briefTitle}
 		/>

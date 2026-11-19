@@ -1,4 +1,8 @@
-<a class="auth-helper-link" href="/portal/forgot-pin">Forgot PIN?</a>
+<script lang="ts">
+	import { base } from '$app/paths';
+</script>
+
+<a class="auth-helper-link" href="{base}/portal/forgot-pin">Forgot PIN?</a>
 
 <style>
 	.auth-helper-link {

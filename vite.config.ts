@@ -27,13 +27,37 @@ function pdfFontPlugin(): Plugin {
 	};
 }
 
+/** `CLIENTELL_WRANGLER_CONFIG=wrangler.sandbox.jsonc` builds/runs the portfolio sandbox. */
+const wranglerConfig = process.env.CLIENTELL_WRANGLER_CONFIG || undefined;
+/** `CLIENTELL_HTTP=1` serves plain http (for embedded preview browsers that reject the dev cert). */
+const useHttps = process.env.CLIENTELL_HTTP !== '1';
+/** Deploy base path. Main = '' (domain root); sandbox = '/clientell' (sandbox.daneoleary.com/clientell). */
+const rawBase = (process.env.CLIENTELL_BASE_PATH ?? '').trim().replace(/\/+$/, '');
+if (rawBase && !rawBase.startsWith('/')) {
+	throw new Error(`CLIENTELL_BASE_PATH must start with "/" (got "${rawBase}")`);
+}
+const basePath = rawBase as '' | `/${string}`;
+
 export default defineConfig(({ command }) => ({
 	plugins: [
 		pdfFontPlugin(),
-		...(command === 'serve' ? [basicSsl()] : []),
+		...(command === 'serve' && useHttps ? [basicSsl()] : []),
 		tailwindcss(),
 		sveltekit({
-			adapter: adapter(),
+			adapter: adapter(
+				wranglerConfig
+					? {
+							config: wranglerConfig,
+							platformProxy: {
+								configPath: wranglerConfig,
+								// Separate state dir so it doesn't lock the store worker's SQLite files.
+								persist: { path: '.wrangler/sandbox-app' }
+							}
+						}
+					: {}
+			),
+			// Absolute base everywhere (no SSR-relative '../' links) so cookies/redirects agree.
+			paths: { base: basePath, relative: false },
 			compilerOptions: {
 				// Force runes mode for the project, except for libraries. Can be removed in svelte 6.
 				runes: ({ filename }) => (filename.split(/[/\\]/).includes('node_modules') ? undefined : true)
@@ -48,9 +72,10 @@ export default defineConfig(({ command }) => ({
 	],
 	server: {
 		// Browsers and IDE previews often open https://localhost; basicSsl serves a local cert.
-		https: command === 'serve',
 		host: 'localhost',
-		port: 5173,
+		port: Number(process.env.PORT) || 5173,
+		// BrandLogo imports SVGs from /brand; SvelteKit's default fs.allow doesn't include it.
+		fs: { allow: ['brand'] },
 		strictPort: false
 	},
 	ssr: {

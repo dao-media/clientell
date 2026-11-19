@@ -1,0 +1,12 @@
+{
+	// Per-visitor SQLite databases for the ClienTell portfolio sandbox.
+	// Deploy once: npx wrangler deploy -c sandbox-store/wrangler.jsonc
+	"$schema": "../node_modules/wrangler/config-schema.json",
+	"name": "clientell-sandbox-store",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-06-19",
+	"durable_objects": {
+		"bindings": [{ "name": "SANDBOX_DB", "class_name": "SandboxDatabase" }]
+	},
+	"migrations": [{ "tag": "v1", "new_sqlite_classes": ["SandboxDatabase"] }]
+}

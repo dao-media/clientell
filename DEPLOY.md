@@ -1,4 +1,4 @@
-# Deploy Briefly to briefly.daneoleary.com
+# Deploy ClienTell to clientell.daneoleary.com
 
 The subdomain **will not appear in Cloudflare** until you complete the steps below. Nothing in the codebase creates DNS or domains automatically—you deploy the app first, then attach the subdomain.
 
@@ -77,7 +77,7 @@ You should see `0000_init.sql` marked ✅.
 
 ---
 
-## Step 4 — Deploy Briefly to Cloudflare Pages
+## Step 4 — Deploy ClienTell to Cloudflare Pages
 
 ```sh
 npm run deploy
@@ -103,7 +103,7 @@ Note the deployment URL in the output (something like `https://briefly.pages.dev
 |-----------------|------------|------------------------------------|
 | `ADMIN_PASSWORD`| **Secret** | A strong password (your admin login) |
 | `SESSION_SECRET`| **Secret** | A long random string (32+ chars)   |
-| `PUBLIC_ORIGIN` | Plain text | `https://briefly.daneoleary.com`   |
+| `PUBLIC_ORIGIN` | Plain text | `https://clientell.daneoleary.com` |
 
 Email sending uses the Cloudflare Email REST API. Set `EMAIL_API_TOKEN` as a **Production** secret with **Account → Email Sending → Edit** permission. If that secret is missing or invalid, the app cannot send mail (Cloudflare Pages does not support the Workers `send_email` binding).
 
@@ -118,24 +118,16 @@ npm run deploy
 
 ## Step 6 — Attach the custom domain (this creates the subdomain)
 
-You can use the dashboard **or** the CLI. Do one, not both.
-
-### Option A — Dashboard (recommended)
+Use the Cloudflare dashboard:
 
 1. [Cloudflare Dashboard](https://dash.cloudflare.com/) → **Workers & Pages**
 2. Click **briefly**
 3. **Custom domains** tab (or **Domains & routes** in newer UI)
 4. Click **Set up a custom domain** / **Add domain**
-5. Enter: `briefly.daneoleary.com`
+5. Enter: `clientell.daneoleary.com`
 6. Click **Continue** / **Activate domain**
 
 Cloudflare will attach the domain to your Pages project and, if **daneoleary.com** is on the same account, create the DNS record for you.
-
-### Option B — Terminal
-
-```sh
-npm run domain:add
-```
 
 ---
 
@@ -151,12 +143,12 @@ You should see a record like:
 
 | Type  | Name    | Content                    | Proxy |
 |-------|---------|----------------------------|-------|
-| CNAME | briefly | `briefly.pages.dev` (or similar) | Proxied (orange cloud) |
+| CNAME | clientell | `briefly.pages.dev` (or similar) | Proxied (orange cloud) |
 
 If the record is missing after Step 6, add it manually:
 
 - **Type:** CNAME  
-- **Name:** `briefly`  
+- **Name:** `clientell`
 - **Target:** the `.pages.dev` hostname shown on the **briefly** Pages project overview  
 - **Proxy status:** Proxied (orange cloud)  
 - Save
@@ -171,9 +163,9 @@ Then open:
 
 | Page            | URL |
 |-----------------|-----|
-| Landing         | https://briefly.daneoleary.com |
-| Admin login     | https://briefly.daneoleary.com/admin/login |
-| Client portal   | https://briefly.daneoleary.com/portal |
+| Landing         | https://clientell.daneoleary.com |
+| Admin login     | https://clientell.daneoleary.com/admin/login |
+| Client portal   | https://clientell.daneoleary.com/portal |
 
 Sign in to admin with the `ADMIN_PASSWORD` you set in Step 5.
 
@@ -185,13 +177,13 @@ Sign in to admin with the `ADMIN_PASSWORD` you set in Step 5.
 
 You haven’t deployed yet. Run **Step 4** (`npm run deploy`).
 
-### “I don’t see briefly.daneoleary.com under DNS”
+### “I don’t see clientell.daneoleary.com under DNS”
 
 You haven’t completed **Step 6** (custom domain). The DNS record is created when you attach the domain to Pages, not when you write code locally.
 
 ### “daneoleary.com isn’t on Cloudflare”
 
-Add the zone first (**Websites → Add a site**). Or, at your current DNS host, add a CNAME: `briefly` → your Pages `.pages.dev` URL (Cloudflare will show the exact target when you add the custom domain).
+Add the zone first (**Websites → Add a site**). Or, at your current DNS host, add a CNAME: `clientell` → your Pages `.pages.dev` URL (Cloudflare will show the exact target when you add the custom domain).
 
 ### Wrangler says wrong Node version
 
@@ -211,7 +203,7 @@ Use the project scripts as written (`npm run deploy`, etc.) or prefix with:
 node ./node_modules/wrangler/bin/wrangler.js <command>
 ```
 
-### Site loads on `.pages.dev` but not on briefly.daneoleary.com
+### Site loads on `.pages.dev` but not on clientell.daneoleary.com
 
 - Check DNS record exists (Step 7)
 - Wait for SSL to show **Active**
@@ -237,7 +229,6 @@ npm run db:migrate:remote
 npm run deploy   # also runs pending remote migrations, then deploys
 # → set ADMIN_PASSWORD, SESSION_SECRET, PUBLIC_ORIGIN in dashboard
 npm run deploy
-npm run domain:add   # or use dashboard Step 6A
 ```
 
-Then verify DNS under **Websites → daneoleary.com → DNS** and test https://briefly.daneoleary.com.
+Then verify DNS under **Websites → daneoleary.com → DNS** and test https://clientell.daneoleary.com.

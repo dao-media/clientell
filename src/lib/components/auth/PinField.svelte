@@ -6,11 +6,16 @@
 		id,
 		name,
 		value = $bindable(''),
+		label = '',
+		error = '',
 		class: className = ''
 	}: {
 		id: string;
 		name: string;
 		value?: string;
+		/** Visible label, rendered inside the field. */
+		label?: string;
+		error?: string;
 		class?: string;
 	} = $props();
 
@@ -66,23 +71,37 @@
 <!-- Hidden field carries the POST value; visible field is display-only (no name = no browser format checks). -->
 <input type="hidden" {name} bind:this={hiddenInput} bind:value />
 
-<input
-	class="field font-mono tracking-[0.3em] {className}"
-	{id}
-	type="tel"
-	inputmode="numeric"
-	autocomplete="one-time-code"
-	autocapitalize="off"
-	autocorrect="off"
-	spellcheck="false"
-	enterkeyhint="done"
-	maxlength={6}
-	data-auth-pin="true"
-	data-auth-pin-name={name}
-	value={display}
-	oninput={onInput}
-	onchange={onChange}
-	onblur={onBlur}
-	onpaste={onPaste}
-	oninvalid={onInvalid}
-/>
+<div class="float-field" class:float-field--bare={!label}>
+	<input
+		class="field pin-input {className}"
+		{id}
+		type="tel"
+		inputmode="numeric"
+		autocomplete="one-time-code"
+		autocapitalize="off"
+		autocorrect="off"
+		spellcheck="false"
+		enterkeyhint="done"
+		maxlength={6}
+		placeholder=" "
+		aria-invalid={error ? 'true' : undefined}
+		data-auth-pin="true"
+		data-auth-pin-name={name}
+		value={display}
+		oninput={onInput}
+		onchange={onChange}
+		onblur={onBlur}
+		onpaste={onPaste}
+		oninvalid={onInvalid}
+	/>
+	{#if label}
+		<label class="float-field__label" for={id}>{label}</label>
+	{/if}
+</div>
+
+<style>
+	.pin-input {
+		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+		letter-spacing: 0.3em;
+	}
+</style>

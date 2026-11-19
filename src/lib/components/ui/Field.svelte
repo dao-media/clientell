@@ -1,6 +1,10 @@
 <script lang="ts">
 	import { formatUsPhoneInput } from '$lib/phone';
 
+	/**
+	 * Text input with a floating label (label sits inside the field, rises on focus/value).
+	 * Hints and errors are linked with aria-describedby; errors set aria-invalid.
+	 */
 	let {
 		label = '',
 		labelText = '',
@@ -10,7 +14,8 @@
 		invalidText = '',
 		helperText = '',
 		class: className = '',
-		type,
+		type = 'text',
+		required = false,
 		oninput,
 		...rest
 	}: {
@@ -23,81 +28,70 @@
 		helperText?: string;
 		class?: string;
 		type?: string;
+		required?: boolean;
 		oninput?: (event: Event & { currentTarget: HTMLInputElement }) => void;
 		[key: string]: unknown;
 	} = $props();
 
+	/** Native widgets that always show their own text (dd/mm/yyyy etc.), so the label stays raised. */
+	const STATIC_TYPES = new Set(['date', 'datetime-local', 'time', 'month', 'week', 'color', 'file']);
+
 	const resolvedLabel = $derived(labelText || label);
 	const resolvedError = $derived(error || invalidText);
-	const inputId = $derived(id ?? (typeof rest.name === 'string' ? rest.name : undefined));
+	// Every control gets an id so its label is always programmatically attached (WCAG 1.3.1 / 4.1.2).
+	const fallbackId = $props.id();
+	const inputId = $derived(id ?? (typeof rest.name === 'string' ? rest.name : `field-${fallbackId}`));
+	const hintId = $derived(inputId ? `${inputId}-hint` : undefined);
+	const describedBy = $derived(
+		[rest['aria-describedby'], resolvedError || helperText ? hintId : null].filter(Boolean).join(' ') ||
+			undefined
+	);
 	const isPhone = $derived(type === 'tel');
-
-	function handlePhoneInput(event: Event & { currentTarget: HTMLInputElement }) {
-		const formatted = formatUsPhoneInput(event.currentTarget.value);
-		event.currentTarget.value = formatted;
-		if (value !== undefined) {
-			value = formatted;
-		}
-		oninput?.(event);
-	}
+	const placeholder = $derived(
+		typeof rest.placeholder === 'string' && rest.placeholder ? rest.placeholder : ' '
+	);
 
 	function handleInput(event: Event & { currentTarget: HTMLInputElement }) {
+		if (isPhone) {
+			const formatted = formatUsPhoneInput(event.currentTarget.value);
+			event.currentTarget.value = formatted;
+			value = formatted;
+		}
 		oninput?.(event);
 	}
 </script>
 
 <div class="field-group {className}">
-	{#if resolvedLabel}
-		<label class="label" for={inputId}>{resolvedLabel}</label>
-	{/if}
-	{#if value !== undefined}
-		{#if isPhone}
-			<input
-				class="field"
-				class:field-invalid={!!resolvedError}
-				id={inputId}
-				type="tel"
-				inputmode="numeric"
-				autocomplete="tel"
-				{value}
-				oninput={handlePhoneInput}
-				{...rest}
-			/>
-		{:else}
-			<input
-				class="field"
-				class:field-invalid={!!resolvedError}
-				id={inputId}
-				{type}
-				bind:value
-				oninput={handleInput}
-				{...rest}
-			/>
-		{/if}
-	{:else if isPhone}
+	<div
+		class="float-field"
+		class:float-field--static={STATIC_TYPES.has(type)}
+		class:float-field--bare={!resolvedLabel}
+	>
 		<input
-			class="field"
-			class:field-invalid={!!resolvedError}
-			id={inputId}
-			type="tel"
-			inputmode="numeric"
-			autocomplete="tel"
-			oninput={handlePhoneInput}
 			{...rest}
-		/>
-	{:else}
-		<input
 			class="field"
 			class:field-invalid={!!resolvedError}
 			id={inputId}
-			{type}
+			type={isPhone ? 'tel' : type}
+			inputmode={isPhone ? 'numeric' : (rest.inputmode as 'numeric' | undefined)}
+			autocomplete={isPhone && !rest.autocomplete ? 'tel' : (rest.autocomplete as never)}
+			{required}
+			placeholder={resolvedLabel ? placeholder : (rest.placeholder as string | undefined)}
+			aria-invalid={resolvedError ? 'true' : undefined}
+			aria-describedby={describedBy}
+			bind:value
 			oninput={handleInput}
-			{...rest}
 		/>
-	{/if}
+		{#if resolvedLabel}
+			<label class="float-field__label" for={inputId}>
+				{resolvedLabel}{#if required}<span class="float-field__required" aria-hidden="true">{' *'}</span>{/if}
+			</label>
+		{/if}
+	</div>
 	{#if resolvedError}
-		<p class="form-error">{resolvedError}</p>
+		<p class="form-error" id={hintId} role="alert">{resolvedError}</p>
 	{:else if helperText}
-		<p class="help">{helperText}</p>
+		<p class="help" id={hintId}>{helperText}</p>
 	{/if}
 </div>
+

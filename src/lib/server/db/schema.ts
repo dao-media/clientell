@@ -41,7 +41,34 @@ export const clients = sqliteTable('clients', {
 	legalName: text('legal_name'),
 	entityType: text('entity_type'),
 	entityState: text('entity_state'),
+	failedPinAttempts: integer('failed_pin_attempts').notNull().default(0),
+	pinLockoutUntil: integer('pin_lockout_until', { mode: 'timestamp' }),
+	pinStrikeWindowUntil: integer('pin_strike_window_until', { mode: 'timestamp' }),
+	isLocked: integer('is_locked', { mode: 'boolean' }).notNull().default(false),
+	lockedAt: integer('locked_at', { mode: 'timestamp' }),
 	createdAt: integer('created_at', { mode: 'timestamp' })
+		.notNull()
+		.$defaultFn(() => new Date())
+});
+
+export type SocialLink = { label: string; url: string };
+
+/** Single-row table (id = 'owner') holding the studio owner's identity + admin credentials. */
+export const adminProfile = sqliteTable('admin_profile', {
+	id: text('id').primaryKey().default('owner'),
+	email: text('email').notNull(),
+	firstName: text('first_name').notNull(),
+	lastName: text('last_name').notNull(),
+	businessName: text('business_name').notNull(),
+	phone: text('phone'),
+	website: text('website'),
+	socialLinks: text('social_links', { mode: 'json' }).$type<SocialLink[]>().notNull().default([]),
+	passwordHash: text('password_hash').notNull(),
+	passwordSalt: text('password_salt').notNull(),
+	createdAt: integer('created_at', { mode: 'timestamp' })
+		.notNull()
+		.$defaultFn(() => new Date()),
+	updatedAt: integer('updated_at', { mode: 'timestamp' })
 		.notNull()
 		.$defaultFn(() => new Date())
 });

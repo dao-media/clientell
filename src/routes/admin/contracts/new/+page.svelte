@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import { enhance } from '$app/forms';
 	import ContractForm from '$lib/components/admin/ContractForm.svelte';
 	import ContractPreview from '$lib/components/admin/ContractPreview.svelte';
@@ -19,7 +20,7 @@
 	const clauses = $derived(data.clauses);
 
 	const selectedClient = $derived(data.clients.find((client) => client.id === state.clientId) ?? null);
-	const ctx = $derived(editorStateToContext(state, selectedClient));
+	const ctx = $derived({ ...editorStateToContext(state, selectedClient), designer: data.designer });
 	const pricing = $derived(
 		computePricing({
 			baseFee: ctx.baseFee,
@@ -56,7 +57,7 @@
 		<div>
 			<ContractForm clients={data.clients} bind:state />
 			<div class="actions">
-				<Btn variant="ghost" href="/admin/contracts">Cancel</Btn>
+				<Btn variant="ghost" href="{base}/admin/contracts">Cancel</Btn>
 				<Btn type="submit">Save draft</Btn>
 			</div>
 		</div>

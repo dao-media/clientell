@@ -306,7 +306,8 @@ Client: ________________________________  Date: __________
 
 Project name: {{project_name}}
 Date: {{effective_date}}
-Primary Client contact (approvals authority): {{contact_name}} / {{contact_email}} / {{contact_phone}}`
+Primary Client contact (approvals authority): {{contact_name}} / {{contact_email}} / {{contact_phone}}
+Designer contact: {{designer_display}} / {{designer_email}} / {{designer_phone}} / {{designer_website}}`
 	},
 	{
 		docType: 'sow',

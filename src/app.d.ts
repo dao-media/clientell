@@ -13,6 +13,8 @@ declare global {
 			db: import('$lib/server/db').Database;
 			admin?: import('$lib/server/auth/session').AdminSession;
 			client?: import('$lib/server/auth/session').ClientSession;
+			/** True when running as the portfolio sandbox (per-visitor demo DB, no comms). */
+			sandbox?: boolean;
 		}
 	}
 }

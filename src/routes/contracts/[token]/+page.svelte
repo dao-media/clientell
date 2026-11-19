@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import { enhance } from '$app/forms';
 	import ContractDocument from '$lib/components/contract/ContractDocument.svelte';
 	import Alert from '$lib/components/ui/Alert.svelte';
@@ -44,9 +45,9 @@
 	<form method="POST" action="?/sign" use:enhance class="sign-actions">
 		<input type="hidden" name="signature" value={clientPng ?? ''} />
 		<Btn type="submit" disabled={!clientPng || Boolean(data.signatures.clientPng)}>
-			Save my signature
+			Save signature
 		</Btn>
-		<Btn variant="ghost" href="/api/contracts/download/{data.token}">Download PDF</Btn>
+		<Btn variant="ghost" href="{base}/api/contracts/download/{data.token}">Download PDF</Btn>
 	</form>
 </div>
 

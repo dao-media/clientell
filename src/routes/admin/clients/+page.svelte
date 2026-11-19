@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import { enhance } from '$app/forms';
 	import {
 		clientsFromActionData,
@@ -166,6 +167,15 @@
 			variant="success"
 			title={form.deletedCount === 1 ? 'Client deleted' : `${form.deletedCount} clients deleted`}
 		/>
+	{:else if form?.success && 'lockChanged' in form && form.lockChanged}
+		<Alert
+			variant="success"
+			title={form.lockChanged === 'locked'
+				? 'Client locked'
+				: form.lockChanged === 'unlocked-reset'
+					? 'Client unlocked — they must choose a new PIN on next sign-in'
+					: 'Client unlocked'}
+		/>
 	{:else if form?.success && form.deleted}
 		<Alert variant="success" title="Client deleted" />
 	{:else if form?.success}
@@ -180,8 +190,8 @@
 		/>
 		{#if 'emailTaken' in form && form.emailTaken}
 			<p class="email-taken-actions">
-				<Btn variant="secondary" href="/portal">Sign in to portal</Btn>
-				<Btn variant="ghost" href="/portal/forgot-pin">Forgot PIN</Btn>
+				<Btn variant="secondary" href="{base}/portal">Sign in</Btn>
+				<Btn variant="ghost" href="{base}/portal/forgot-pin">Forgot PIN</Btn>
 			</p>
 		{/if}
 	{/if}
@@ -198,7 +208,7 @@
 		{#if clientCount === 0}
 			<div class="card empty-panel">
 				<p class="empty-state">No clients yet.</p>
-				<Btn onclick={openAddClient}>Add your first client</Btn>
+				<Btn onclick={openAddClient}>Add client</Btn>
 			</div>
 		{:else}
 			{#each clients as client (client.id)}
@@ -208,6 +218,7 @@
 					selected={selectedClientIds.includes(client.id)}
 					ontoggle={toggleClientSelection}
 					onedit={openEditClient}
+					onlockchange={afterClientSaved}
 				/>
 			{/each}
 		{/if}

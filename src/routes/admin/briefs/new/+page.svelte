@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import { page } from '$app/stores';
 	import Btn from '$lib/components/Btn.svelte';
 	import Alert from '$lib/components/ui/Alert.svelte';
@@ -48,16 +49,16 @@
 				<p><strong>Categories:</strong> {form.briefCategories}</p>
 			{/if}
 			<div class="form-actions">
-				<Btn href="/admin/submissions/{form.assignmentId}">Open submission</Btn>
+				<Btn href="{base}/admin/submissions/{form.assignmentId}">View brief</Btn>
 				<Btn
 					variant="secondary"
-					href="/admin/submissions/{form.assignmentId}/preview"
+					href="{base}/admin/submissions/{form.assignmentId}/preview"
 					target="_blank"
 					rel="noopener"
 				>
 					Preview brief
 				</Btn>
-				<Btn variant="secondary" href="/admin/briefs/new">Create another</Btn>
+				<Btn variant="secondary" href="{base}/admin/briefs/new">New brief</Btn>
 			</div>
 		</div>
 	{:else}
@@ -105,7 +106,7 @@
 				>
 					Create brief
 				</Btn>
-				<Btn variant="secondary" href="/admin">Cancel</Btn>
+				<Btn variant="secondary" href="{base}/admin">Cancel</Btn>
 			</div>
 		</form>
 	{/if}

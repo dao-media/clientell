@@ -2,6 +2,7 @@ import { fail } from '@sveltejs/kit';
 import { sendForgotPinForEmail } from '$lib/server/auth/forgot-pin';
 import { authDebug, maskEmail } from '$lib/debug/auth-debug';
 import { normalizeEmail } from '$lib/utils';
+import { findLockoutClientByEmail, lockoutState } from '$lib/server/auth/pin-lockout';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => ({});
@@ -25,6 +26,13 @@ export const actions: Actions = {
 		if (!email) {
 			authDebug('forgot-pin-validation-failed', { reason: 'empty-email' });
 			return fail(400, { error: 'Enter the email address you use for portal sign-in.' });
+		}
+
+		// Never issue a fresh PIN while the account is locked or cooling down — that would bypass the lockout.
+		const lockoutClient = await findLockoutClientByEmail(locals.db, email);
+		if (lockoutClient && lockoutState(lockoutClient).kind !== 'open') {
+			authDebug('forgot-pin-blocked-lockout', { email: maskEmail(email) });
+			return { success: true, message: SUCCESS_MESSAGE };
 		}
 
 		const { sent } = await sendForgotPinForEmail(locals.db, platform, email);

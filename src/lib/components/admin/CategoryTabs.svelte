@@ -1,6 +1,9 @@
 <script lang="ts">
 	import Plus from '@lucide/svelte/icons/plus';
 	import GripVertical from '@lucide/svelte/icons/grip-vertical';
+	import Pencil from '@lucide/svelte/icons/pencil';
+	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
+	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import { PLACEHOLDER_CATEGORY_TAB_ID, type QuestionCategory } from '$lib/categories';
 
 	let {
@@ -90,6 +93,37 @@
 		}
 	}
 
+	const activeCategory = $derived(categories.find((category) => category.id === activeId) ?? null);
+	const activeIndex = $derived(categories.findIndex((category) => category.id === activeId));
+
+	/** Single-pointer / keyboard alternative to drag-to-reorder (WCAG 2.5.7, 2.1.1). */
+	function moveActive(direction: -1 | 1) {
+		if (!onreorder || activeIndex === -1) return;
+		const target = activeIndex + direction;
+		if (target < 0 || target >= categories.length) return;
+		const ids = categories.map((category) => category.id);
+		[ids[activeIndex], ids[target]] = [ids[target], ids[activeIndex]];
+		onreorder(ids);
+		queueMicrotask(() => document.getElementById(`tab-${activeId}`)?.focus());
+	}
+
+	function renameActive() {
+		if (!activeCategory) return;
+		const rect = tabAnchor(activeCategory.id);
+		if (rect) onedit(activeCategory, rect);
+	}
+
+	function onTabKeydown(item: TabItem, event: KeyboardEvent) {
+		if (item.placeholder) return;
+		if (event.key === 'F2') {
+			event.preventDefault();
+			if (item.category) onedit(item.category, tabAnchor(item.id) ?? new DOMRect());
+		} else if (event.altKey && (event.key === 'ArrowLeft' || event.key === 'ArrowRight') && item.id === activeId) {
+			event.preventDefault();
+			moveActive(event.key === 'ArrowLeft' ? -1 : 1);
+		}
+	}
+
 	function reorderTabs(fromId: string, toId: string) {
 		if (!onreorder || fromId === toId) return;
 
@@ -162,6 +196,7 @@
 				ondragover={(event) => onTabDragOver(item.id, event)}
 				ondrop={(event) => onTabDrop(item.id, event)}
 				onclick={() => handleSelect(item)}
+				onkeydown={(event) => onTabKeydown(item, event)}
 			>
 				{#if !item.placeholder && canReorder}
 					<span class="drag-handle" aria-hidden="true">
@@ -180,6 +215,36 @@
 		{/each}
 	</div>
 
+	{#if activeCategory}
+		<div class="tab-tools" role="toolbar" aria-label="Selected category: {activeCategory.name}">
+			<button type="button" class="tab-tool" onclick={renameActive} aria-label="Rename {activeCategory.name}" title="Rename (F2)">
+				<Pencil size={16} strokeWidth={2} aria-hidden="true" />
+			</button>
+			{#if canReorder}
+				<button
+					type="button"
+					class="tab-tool"
+					onclick={() => moveActive(-1)}
+					disabled={activeIndex <= 0}
+					aria-label="Move {activeCategory.name} left"
+					title="Move left (Alt+←)"
+				>
+					<ChevronLeft size={16} strokeWidth={2} aria-hidden="true" />
+				</button>
+				<button
+					type="button"
+					class="tab-tool"
+					onclick={() => moveActive(1)}
+					disabled={activeIndex >= categories.length - 1}
+					aria-label="Move {activeCategory.name} right"
+					title="Move right (Alt+→)"
+				>
+					<ChevronRight size={16} strokeWidth={2} aria-hidden="true" />
+				</button>
+			{/if}
+		</div>
+	{/if}
+
 	{#if hasRealCategories}
 		<button
 			type="button"
@@ -195,16 +260,50 @@
 {#if hasRealCategories}
 	<p class="tab-hint">
 		{#if canReorder}
-			Drag tabs to reorder. Double-click a category name to edit it.
+			Drag a tab or use the arrows to reorder. Use the pencil (or double-click a name) to rename.
 		{:else}
-			Double-click a category name to edit it.
+			Use the pencil (or double-click a name) to rename the selected category.
 		{/if}
 	</p>
 {:else}
-	<p class="tab-hint">Double-click Category to name your first brief type. The + button appears after that.</p>
+	<p class="tab-hint">Select Category to name your first brief type. The + button appears after that.</p>
 {/if}
 
 <style>
+	.tab-tools {
+		display: flex;
+		align-items: center;
+		gap: 0.125rem;
+		margin-bottom: 0.25rem;
+	}
+
+	.tab-tool {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2rem;
+		height: 2rem;
+		border: 1px solid var(--color-control-border);
+		border-radius: var(--control-radius);
+		background: var(--color-surface);
+		color: var(--color-ink);
+		cursor: pointer;
+	}
+
+	.tab-tool:hover:not(:disabled) {
+		background: var(--color-surface-hover);
+	}
+
+	.tab-tool:disabled {
+		cursor: not-allowed;
+		opacity: 0.45;
+	}
+
+	.tab-tool:focus-visible {
+		outline: 2px solid var(--color-focus-ring);
+		outline-offset: 1px;
+	}
+
 	.category-tabs-shell {
 		display: flex;
 		align-items: flex-end;

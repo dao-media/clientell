@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { appPath, withBase } from '$lib/paths';
+	import { base } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import Btn from '$lib/components/Btn.svelte';
@@ -76,7 +78,7 @@
 	}
 
 	function applyFilters() {
-		goto(submissionsHrefForView(view, currentFilterParams()));
+		goto(withBase(submissionsHrefForView(view, currentFilterParams())));
 	}
 
 	function clearFilters() {
@@ -84,7 +86,7 @@
 		clientId = '';
 		dateFrom = '';
 		dateTo = '';
-		goto(submissionsHrefForView(view));
+		goto(withBase(submissionsHrefForView(view)));
 	}
 
 	function openReview(submissionId: string) {
@@ -112,7 +114,7 @@
 		{#snippet actions()}
 			<Btn onclick={() => (newBriefOpen = true)}>
 				<Plus size={16} aria-hidden="true" />
-				New Brief
+				New brief
 			</Btn>
 		{/snippet}
 	</PageHeader>
@@ -120,7 +122,7 @@
 	<div class="status-filter" role="tablist" aria-label="Brief state">
 		{#each SUBMISSION_STATUS_FILTERS as option (option.view)}
 			<a
-				href={statusFilterHref(option.view)}
+				href={withBase(statusFilterHref(option.view))}
 				class="status-filter__btn"
 				class:active={view === option.view}
 				role="tab"
@@ -169,7 +171,7 @@
 			{#each submissions as submission (submission.id)}
 				<li class="record-card card">
 					<div class="record-card-head">
-						<a class="row-link" href="/admin/submissions/{submission.id}">{submission.clientCompany}</a>
+						<a class="row-link" href="{base}/admin/submissions/{submission.id}">{submission.clientCompany}</a>
 						<span class="status-pill status-{submission.status ?? 'none'}">
 							{statusLabel(submission.status)}
 						</span>
@@ -199,7 +201,7 @@
 					{/if}
 					<div class="record-card-actions">
 						<Btn variant="secondary" onclick={() => openReview(submission.id)}>View responses</Btn>
-						<Btn variant="ghost" href="/admin/submissions/{submission.id}">Open detail</Btn>
+						<Btn variant="ghost" href="{base}/admin/submissions/{submission.id}">Open detail</Btn>
 					</div>
 				</li>
 			{/each}
@@ -219,9 +221,9 @@
 				</thead>
 				<tbody>
 					{#each submissions as submission (submission.id)}
-						<tr class:selected={$page.url.pathname === `/admin/submissions/${submission.id}`}>
+						<tr class:selected={appPath($page.url.pathname) === `/admin/submissions/${submission.id}`}>
 							<td>
-								<a class="row-link" href="/admin/submissions/{submission.id}">{submission.clientCompany}</a>
+								<a class="row-link" href="{base}/admin/submissions/{submission.id}">{submission.clientCompany}</a>
 								<div class="row-subtle text-break">
 									{submission.clientContact} · {submission.clientEmail}
 									{#if submission.clientPhone}
