@@ -5,6 +5,7 @@ import { clients } from '$lib/server/db/schema';
 import { formatUsPhoneInput } from '$lib/phone';
 import { normalizeEmail } from '$lib/utils';
 import type { Actions } from './$types';
+import { base } from '$app/paths';
 
 export const actions: Actions = {
 	default: async ({ request, locals }) => {
@@ -34,6 +35,6 @@ export const actions: Actions = {
 			email,
 			phone: phone || null
 		});
-		redirect(303, '/admin/clients');
+		redirect(303, `${base}/admin/clients`);
 	}
 };

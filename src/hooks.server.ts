@@ -1,6 +1,10 @@
 import type { Handle, HandleServerError } from '@sveltejs/kit';
 import { dev } from '$app/environment';
+import { eq } from 'drizzle-orm';
 import { getDb } from '$lib/server/db';
+import { assignments, clients } from '$lib/server/db/schema';
+import { isSandboxMode } from '$lib/server/sandbox/mode';
+import { sandboxDatabase } from '$lib/server/sandbox/session';
 import {
 	ADMIN_COOKIE,
 	CLIENT_COOKIE,
@@ -8,6 +12,7 @@ import {
 	type AdminSession,
 	type ClientSession
 } from '$lib/server/auth/session';
+import { deleteCookieEverywhere } from '$lib/paths';
 
 function isSchemaError(message: string): boolean {
 	return (
@@ -18,6 +23,13 @@ function isSchemaError(message: string): boolean {
 }
 
 export const handle: Handle = async ({ event, resolve }) => {
+	if (isSandboxMode(event.platform?.env)) {
+		event.locals.sandbox = true;
+		event.locals.db = getDb(await sandboxDatabase(event));
+		await attachSessions(event);
+		return resolve(event);
+	}
+
 	const dbBinding = event.platform?.env?.DB;
 	if (!dbBinding) {
 		const message =
@@ -32,7 +44,11 @@ export const handle: Handle = async ({ event, resolve }) => {
 	}
 
 	event.locals.db = getDb(dbBinding);
+	await attachSessions(event);
+	return resolve(event);
+};
 
+async function attachSessions(event: Parameters<Handle>[0]['event']) {
 	const adminToken = event.cookies.get(ADMIN_COOKIE);
 	if (adminToken) {
 		const session = await parseSessionToken(adminToken);
@@ -45,12 +61,21 @@ export const handle: Handle = async ({ event, resolve }) => {
 	if (clientToken) {
 		const session = await parseSessionToken(clientToken);
 		if (session?.type === 'client') {
-			event.locals.client = session as ClientSession;
+			// Signed-in clients are bounced the moment an admin locks the account.
+			const [row] = await event.locals.db
+				.select({ isLocked: clients.isLocked })
+				.from(assignments)
+				.innerJoin(clients, eq(assignments.clientId, clients.id))
+				.where(eq(assignments.id, (session as ClientSession).assignmentId))
+				.limit(1);
+			if (row && !row.isLocked) {
+				event.locals.client = session as ClientSession;
+			} else {
+				deleteCookieEverywhere(event.cookies, CLIENT_COOKIE);
+			}
 		}
 	}
-
-	return resolve(event);
-};
+}
 
 export const handleError: HandleServerError = ({ error }) => {
 	const message = error instanceof Error ? error.message : String(error);

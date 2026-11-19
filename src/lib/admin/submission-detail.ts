@@ -1,3 +1,4 @@
+import { withBase } from '$lib/paths';
 export type SubmissionDetail = {
 	assignment: {
 		id: string;
@@ -47,7 +48,7 @@ export type ClientBriefSummary = {
 };
 
 export async function fetchSubmissionDetail(id: string): Promise<SubmissionDetail> {
-	const response = await fetch(`/admin/submissions/${id}/detail`);
+	const response = await fetch(withBase(`/admin/submissions/${id}/detail`));
 	if (!response.ok) {
 		throw new Error('Could not load submission.');
 	}
@@ -55,7 +56,7 @@ export async function fetchSubmissionDetail(id: string): Promise<SubmissionDetai
 }
 
 export async function fetchClientBriefs(clientId: string): Promise<ClientBriefSummary[]> {
-	const response = await fetch(`/admin/clients/${clientId}/briefs`);
+	const response = await fetch(withBase(`/admin/clients/${clientId}/briefs`));
 	if (!response.ok) {
 		throw new Error('Could not load briefs.');
 	}
@@ -63,7 +64,7 @@ export async function fetchClientBriefs(clientId: string): Promise<ClientBriefSu
 }
 
 export async function fetchClientContracts(clientId: string): Promise<ClientContractSummary[]> {
-	const response = await fetch(`/admin/clients/${clientId}/contracts`);
+	const response = await fetch(withBase(`/admin/clients/${clientId}/contracts`));
 	if (!response.ok) {
 		throw new Error('Could not load contracts.');
 	}

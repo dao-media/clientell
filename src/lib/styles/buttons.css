@@ -1,0 +1,157 @@
+/*
+ * ClienTell design system: buttons.
+ *
+ * One size scale for every button. Desktop 40px (small 32px); phones 44px (small 36px),
+ * comfortably above the 24px WCAG 2.5.8 minimum. Labels never wrap; keep copy to a
+ * verb + object ("Send link", "Save PIN") so they fit at phone width.
+ */
+
+:root {
+	--btn-height: 2.5rem;
+	--btn-height-sm: 2rem;
+	--btn-padding-x: 1rem;
+	--btn-padding-x-sm: 0.75rem;
+	--btn-font-size: 0.875rem;
+	--btn-font-size-sm: 0.8125rem;
+	--btn-gap: var(--space-3, 0.75rem);
+}
+
+@media (max-width: 640px) {
+	:root {
+		--btn-height: 2.75rem;
+		--btn-height-sm: 2.25rem;
+		--btn-font-size: 0.9375rem;
+		--btn-font-size-sm: 0.875rem;
+	}
+}
+
+@layer components {
+	.btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		min-height: var(--btn-height);
+		padding: 0 var(--btn-padding-x);
+		border: 1px solid transparent;
+		border-radius: var(--control-radius, 5px);
+		font: inherit;
+		font-size: var(--btn-font-size);
+		font-weight: 600;
+		line-height: 1.2;
+		white-space: nowrap;
+		text-decoration: none;
+		cursor: pointer;
+		transition:
+			background-color 0.15s ease,
+			border-color 0.15s ease,
+			color 0.15s ease,
+			opacity 0.15s ease;
+	}
+
+	.btn-sm {
+		min-height: var(--btn-height-sm);
+		padding: 0 var(--btn-padding-x-sm);
+		font-size: var(--btn-font-size-sm);
+	}
+
+	.btn:focus-visible {
+		outline: 2px solid var(--color-focus-ring);
+		outline-offset: 2px;
+	}
+
+	.btn .btn-label {
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.btn-secondary {
+		border-color: var(--color-control-border);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.btn {
+			transition: none;
+		}
+	}
+
+	/*
+	 * Button groups on phones: equal-width columns that fall back to full-width rows,
+	 * so a group never ends up as a ragged mix of widths. Specificity is raised so this
+	 * wins over component-scoped desktop layouts.
+	 */
+	@media (max-width: 640px) {
+		.site-shell.app-shell
+			:is(
+				.form-actions,
+				.page-header-actions,
+				.page-header-actions-form,
+				.detail-actions,
+				.modal-actions,
+				.header-actions,
+				.header-actions-form,
+				.toolbar,
+				.actions
+			) {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+			gap: var(--btn-gap);
+			width: 100%;
+		}
+
+		.site-shell.app-shell
+			:is(
+				.form-actions,
+				.page-header-actions,
+				.page-header-actions-form,
+				.detail-actions,
+				.modal-actions,
+				.header-actions,
+				.header-actions-form,
+				.toolbar,
+				.actions
+			)
+			> :is(.btn, form, .comms-gate) {
+			width: 100%;
+			min-width: 0;
+		}
+
+		/* Anything else in a button group (status chips, badges, notes) keeps its own size. */
+		.site-shell.app-shell
+			:is(
+				.form-actions,
+				.page-header-actions,
+				.page-header-actions-form,
+				.detail-actions,
+				.modal-actions,
+				.header-actions,
+				.header-actions-form,
+				.toolbar,
+				.actions
+			)
+			> :not(.btn, form, .comms-gate) {
+			justify-self: start;
+			align-self: center;
+		}
+
+		.site-shell.app-shell .comms-gate > .comms-gate-control,
+		.site-shell.app-shell .comms-gate .btn {
+			width: 100%;
+		}
+
+		.site-shell.app-shell
+			:is(
+				.form-actions,
+				.page-header-actions,
+				.detail-actions,
+				.modal-actions,
+				.header-actions,
+				.toolbar,
+				.actions
+			)
+			> form
+			> .btn {
+			width: 100%;
+		}
+	}
+}

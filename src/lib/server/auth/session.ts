@@ -1,7 +1,9 @@
 import { env } from '$env/dynamic/private';
+import { getRequestEvent } from '$app/server';
 import { authDebug } from '$lib/debug/auth-debug';
 import type { LoginDuration } from '$lib/server/auth/login-duration';
 import { sessionCookieMaxAge, sessionDurationSeconds } from '$lib/server/auth/login-duration';
+import { cookiePath } from '$lib/paths';
 
 const DEV_SECRET = 'dev-only-change-me-in-production';
 
@@ -29,6 +31,17 @@ export type ClientSession = {
 
 export type SessionPayload = AdminSession | ClientSession;
 
+/** Which deployment issued a token. Missing = 'main' (tokens minted before this existed). */
+type SessionAudience = 'main' | 'sandbox';
+
+function currentAudience(): SessionAudience {
+	try {
+		return getRequestEvent().locals.sandbox ? 'sandbox' : 'main';
+	} catch {
+		return 'main';
+	}
+}
+
 function encodeBase64Url(data: Uint8Array): string {
 	return btoa(String.fromCharCode(...data))
 		.replace(/\+/g, '-')
@@ -55,7 +68,8 @@ async function sign(data: string): Promise<string> {
 }
 
 export async function createSessionToken(payload: SessionPayload): Promise<string> {
-	const body = encodeBase64Url(new TextEncoder().encode(JSON.stringify(payload)));
+	const stamped = { ...payload, aud: currentAudience() };
+	const body = encodeBase64Url(new TextEncoder().encode(JSON.stringify(stamped)));
 	const signature = await sign(body);
 	return `${body}.${signature}`;
 }
@@ -75,9 +89,12 @@ export async function parseSessionToken(token: string): Promise<SessionPayload |
 
 	try {
 		const json = new TextDecoder().decode(decodeBase64Url(body));
-		const payload = JSON.parse(json) as SessionPayload;
-		if (payload.exp < Date.now()) return null;
-		return payload;
+		const payload = JSON.parse(json) as SessionPayload & { aud?: SessionAudience };
+		if (typeof payload.exp !== 'number' || payload.exp < Date.now()) return null;
+		// A sandbox session must never unlock the real app (or vice versa), even with a shared secret.
+		if ((payload.aud ?? 'main') !== currentAudience()) return null;
+		const { aud: _aud, ...session } = payload;
+		return session as SessionPayload;
 	} catch {
 		return null;
 	}
@@ -85,7 +102,7 @@ export async function parseSessionToken(token: string): Promise<SessionPayload |
 
 export function sessionCookieOptions(maxAgeSeconds: number | null, secure: boolean) {
 	return {
-		path: '/',
+		path: cookiePath(),
 		httpOnly: true,
 		sameSite: 'lax' as const,
 		secure,
@@ -141,4 +158,17 @@ export async function setClientSession(
 		duration,
 		secure: isSecureRequest(url, request)
 	});
+}
+
+/** Point an existing client session at another brief that belongs to the same client. */
+export async function switchClientAssignment(
+	cookies: import('@sveltejs/kit').Cookies,
+	url: URL,
+	session: ClientSession,
+	assignmentId: string,
+	request?: Request
+) {
+	const token = await createSessionToken({ type: 'client', assignmentId, exp: session.exp });
+	const remaining = Math.max(60, Math.floor((session.exp - Date.now()) / 1000));
+	cookies.set(CLIENT_COOKIE, token, sessionCookieOptions(remaining, isSecureRequest(url, request)));
 }

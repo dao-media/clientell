@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { withBase } from '$lib/paths';
 	import AttachmentPreviewCard from '$lib/components/AttachmentPreviewCard.svelte';
 	import {
 		attachmentAnswerKey,
@@ -16,7 +17,7 @@
 		attachments = $bindable<AttachmentItem[]>([]),
 		disabled = false,
 		preview = false,
-		uploadUrl = '/api/uploads',
+		uploadUrl = withBase('/api/uploads'),
 		layout = 'stacked'
 	}: {
 		questionId: string;
@@ -130,6 +131,8 @@
 <div class="uploader" class:preview class:uploader-split={layout === 'split'}>
 	<input type="hidden" name={fieldName} value={JSON.stringify(attachments)} />
 
+	<!-- Focusable so it can receive paste (Cmd/Ctrl+V) of files and links. -->
+	<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 	<div
 		class="media-bin"
 		class:dragging
@@ -311,11 +314,6 @@
 		background: var(--color-surface);
 	}
 
-	.toolbar-label {
-		font-size: 0.75rem;
-		color: var(--color-muted);
-		padding: 0.35rem 0.25rem;
-	}
 
 	.media-btn {
 		display: inline-flex;

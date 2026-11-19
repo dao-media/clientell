@@ -1,6 +1,7 @@
 import { invalidate } from '$app/navigation';
 import { adminDataKeys } from '$lib/admin/refresh-data';
 import type { ClientListItem } from '$lib/admin/clients-list';
+import { withBase } from '$lib/paths';
 
 export type ClientListRow = Omit<ClientListItem, 'createdAt'> & { createdAt: string | Date };
 
@@ -23,10 +24,10 @@ export async function reloadClientsPageData() {
 	await Promise.all([
 		invalidate(adminDataKeys.clients),
 		invalidate(adminDataKeys.dashboard),
-		invalidate('/admin/clients'),
-		invalidate('/admin/briefs/new'),
-		invalidate('/admin/submissions'),
-		invalidate('/admin/submissions/unfinished'),
-		invalidate('/admin/submissions/completed')
+		invalidate(withBase('/admin/clients')),
+		invalidate(withBase('/admin/briefs/new')),
+		invalidate(withBase('/admin/submissions')),
+		invalidate(withBase('/admin/submissions/unfinished')),
+		invalidate(withBase('/admin/submissions/completed'))
 	]);
 }

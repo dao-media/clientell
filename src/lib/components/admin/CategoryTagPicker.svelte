@@ -121,7 +121,7 @@
 						{disabled}
 						onclick={openCreateCategory}
 					>
-						Create Category +
+						New category
 					</button>
 				{/if}
 

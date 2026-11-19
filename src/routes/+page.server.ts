@@ -5,12 +5,25 @@ import {
 import { authDebug, maskEmail } from '$lib/debug/auth-debug';
 import { loginDurationFromForm } from '$lib/server/auth/login-duration';
 import { redirectAdminAfterLogin, redirectAuthenticatedUser, redirectClientAfterLogin } from '$lib/server/auth/routing';
-import { getAdminPassword, setAdminSession } from '$lib/server/auth/session';
+import { setAdminSession } from '$lib/server/auth/session';
+import { hasAdminProfile, verifyAdminPassword } from '$lib/server/admin-profile';
+import {
+	isSandboxMode,
+	SANDBOX_CLIENT_EMAIL,
+	SANDBOX_CLIENT_PIN
+} from '$lib/server/sandbox/mode';
 import type { Actions, PageServerLoad } from './$types';
+import { base } from '$app/paths';
 
-export const load: PageServerLoad = async ({ locals, url }) => {
+export const load: PageServerLoad = async ({ locals, url, platform }) => {
 	await redirectAuthenticatedUser(locals, url.pathname);
-	return {};
+	const sandbox = isSandboxMode(platform?.env);
+	return {
+		hasAdmin: await hasAdminProfile(locals.db),
+		setupDone: url.searchParams.get('setup') === 'done',
+		initialPanel: url.searchParams.get('panel') === 'admin' ? ('admin' as const) : null,
+		demoClient: sandbox ? { email: SANDBOX_CLIENT_EMAIL, pin: SANDBOX_CLIENT_PIN } : null
+	};
 };
 
 export const actions: Actions = {
@@ -26,9 +39,12 @@ export const actions: Actions = {
 		const password = String(data.get('password') ?? '').trim();
 		const passwordPresent = password.length > 0;
 
-		if (password !== getAdminPassword()) {
+		if (!(await verifyAdminPassword(locals.db, password))) {
 			authDebug('home-admin-login-failed', { passwordPresent });
-			return fail(400, { adminError: 'Incorrect password.' });
+			return fail(400, {
+				adminError: 'Incorrect password.',
+				authDebug: { scope: 'home-admin-login-failed', passwordPresent }
+			});
 		}
 
 		authDebug('home-admin-login-success', {
@@ -36,7 +52,7 @@ export const actions: Actions = {
 		});
 
 		await setAdminSession(cookies, url, loginDurationFromForm(data), request);
-		redirect(303, '/admin');
+		redirect(303, `${base}/admin`);
 	},
 
 	portalLogin: async ({ request, locals, cookies, url }) => {

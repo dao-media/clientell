@@ -20,7 +20,14 @@ export type PinValueAnalysis = {
 };
 
 const MAX_CLIENT_LOG = 80;
-const clientLog: AuthDebugEntry[] = [];
+const WINDOW_LOG_KEY = '__brieflyAuthClientLog';
+
+function clientLog(): AuthDebugEntry[] {
+	if (typeof window === 'undefined') return [];
+	const store = window as Window & { [WINDOW_LOG_KEY]?: AuthDebugEntry[] };
+	if (!store[WINDOW_LOG_KEY]) store[WINDOW_LOG_KEY] = [];
+	return store[WINDOW_LOG_KEY];
+}
 
 export function authDebug(scope: string, data: Record<string, unknown> = {}): AuthDebugEntry {
 	const entry: AuthDebugEntry = {
@@ -34,9 +41,10 @@ export function authDebug(scope: string, data: Record<string, unknown> = {}): Au
 	}
 
 	if (typeof window !== 'undefined') {
-		clientLog.push(entry);
-		if (clientLog.length > MAX_CLIENT_LOG) {
-			clientLog.shift();
+		const log = clientLog();
+		log.push(entry);
+		if (log.length > MAX_CLIENT_LOG) {
+			log.shift();
 		}
 	}
 
@@ -44,11 +52,11 @@ export function authDebug(scope: string, data: Record<string, unknown> = {}): Au
 }
 
 export function getAuthDebugLog(): readonly AuthDebugEntry[] {
-	return clientLog;
+	return clientLog();
 }
 
 export function clearAuthDebugLog() {
-	clientLog.length = 0;
+	clientLog().length = 0;
 }
 
 export function analyzePinValue(raw: string): PinValueAnalysis {

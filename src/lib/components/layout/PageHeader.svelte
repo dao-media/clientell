@@ -6,12 +6,15 @@
 		lead = '',
 		kicker = '',
 		actions,
+		badge,
 		children
 	}: {
 		title: string;
 		lead?: string;
 		kicker?: string;
 		actions?: Snippet;
+		/** Status chip shown on the title line (e.g. Draft / Submitted). */
+		badge?: Snippet;
 		children?: Snippet;
 	} = $props();
 </script>
@@ -21,7 +24,14 @@
 		{#if kicker}
 			<p class="page-kicker">{kicker}</p>
 		{/if}
-		<h1>{title}</h1>
+		{#if badge}
+			<div class="page-title-row">
+				<h1>{title}</h1>
+				{@render badge()}
+			</div>
+		{:else}
+			<h1>{title}</h1>
+		{/if}
 		{#if lead}
 			<p class="page-lead">{lead}</p>
 		{/if}

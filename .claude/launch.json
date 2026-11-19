@@ -1,0 +1,41 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
+      "port": 5173,
+      "url": "https://localhost:5173"
+    },
+    {
+      "name": "dev-http",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
+      "env": {
+        "CLIENTELL_HTTP": "1",
+        "PORT": "5180"
+      },
+      "port": 5180
+    },
+    {
+      "name": "sandbox-http",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "sandbox:dev"
+      ],
+      "env": {
+        "CLIENTELL_HTTP": "1",
+        "PORT": "5181"
+      },
+      "port": 5181
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 import { env } from '$env/dynamic/private';
+import { isSandboxMode, SANDBOX_COMMS_TOOLTIP } from '$lib/server/sandbox/mode';
 
 type OutboundEmail = {
 	to: string;
@@ -79,7 +80,7 @@ async function sendViaRestApi(
 	const credentials = getApiCredentials(platform);
 	if (!credentials) return null;
 
-	const attempt = async (token: string): Promise<SendResult> => {
+	const attempt = async (token: string): Promise<SendResult & { authFailed: boolean }> => {
 		const response = await fetch(
 			`https://api.cloudflare.com/client/v4/accounts/${credentials.accountId}/email/sending/send`,
 			{
@@ -137,6 +138,11 @@ export async function sendOutboundEmail(
 	platform: App.Platform | undefined,
 	message: OutboundEmail
 ): Promise<SendResult> {
+	// Portfolio sandbox: never send anything, whatever the caller asked for.
+	if (isSandboxMode(platform?.env)) {
+		return { ok: true, simulated: true, message: SANDBOX_COMMS_TOOLTIP };
+	}
+
 	const viaBinding = await sendViaBinding(platform, message);
 	if (viaBinding) return viaBinding;
 
@@ -149,6 +155,6 @@ export async function sendOutboundEmail(
 		ok: true,
 		simulated: true,
 		message:
-			'Email logged locally (enable Email Sending on daneoleary.com and set CLOUDFLARE_ACCOUNT_ID + EMAIL_API_TOKEN).'
+			'Email logged locally (enable Cloudflare Email Sending on your domain and set CLOUDFLARE_ACCOUNT_ID + EMAIL_API_TOKEN — see SETUP.md).'
 	};
 }

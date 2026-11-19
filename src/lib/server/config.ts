@@ -1,8 +1,9 @@
 import { dev } from '$app/environment';
 import { env } from '$env/dynamic/private';
+import { base } from '$app/paths';
 
 /** Production hostname for ClienTell */
-export const PRODUCTION_ORIGIN = 'https://briefly.daneoleary.com';
+export const PRODUCTION_ORIGIN = 'https://clientell.daneoleary.com';
 
 const LOCAL_ORIGIN = 'https://localhost:5173';
 
@@ -21,7 +22,13 @@ function isCloudflarePages(platform?: App.Platform): boolean {
 	);
 }
 
+/** Absolute URL of the app root, including the deploy base path (e.g. https://host/clientell). */
 export function getPublicOrigin(platform?: App.Platform): string {
+	const origin = getPublicHost(platform);
+	return origin.endsWith(base) ? origin : `${origin}${base}`;
+}
+
+function getPublicHost(platform?: App.Platform): string {
 	const configured =
 		(platform?.env as { PUBLIC_ORIGIN?: string } | undefined)?.PUBLIC_ORIGIN ?? env.PUBLIC_ORIGIN;
 
@@ -44,8 +51,14 @@ export function getPortalUrl(platform?: App.Platform): string {
 	return `${getPublicOrigin(platform)}/portal`;
 }
 
-export function getAdminNotificationEmail(): string {
-	return (env.ADMIN_NOTIFICATION_EMAIL ?? env.EMAIL_FROM ?? 'briefly@daneoleary.com').trim();
+/** ADMIN_NOTIFICATION_EMAIL wins; otherwise the onboarded admin's email; then EMAIL_FROM. */
+export function getAdminNotificationEmail(profileEmail?: string | null): string {
+	return (
+		env.ADMIN_NOTIFICATION_EMAIL ??
+		(profileEmail || undefined) ??
+		env.EMAIL_FROM ??
+		'briefly@daneoleary.com'
+	).trim();
 }
 
 export function adminSubmissionUrl(assignmentId: string, platform?: App.Platform): string {

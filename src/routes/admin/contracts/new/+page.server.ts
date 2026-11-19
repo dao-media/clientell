@@ -3,6 +3,7 @@ import { asc } from 'drizzle-orm';
 import { insertContract, loadActiveClauses, parseContractForm } from '$lib/server/contract/store';
 import { clients } from '$lib/server/db/schema';
 import type { Actions, PageServerLoad } from './$types';
+import { base } from '$app/paths';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const [clientRows, clauses] = await Promise.all([
@@ -36,6 +37,6 @@ export const actions: Actions = {
 		if (!parsed.projectName) return fail(400, { error: 'Project name is required.' });
 
 		const row = await insertContract(locals.db, parsed);
-		redirect(303, `/admin/contracts/${row.id}`);
+		redirect(303, `${base}/admin/contracts/${row.id}`);
 	}
 };

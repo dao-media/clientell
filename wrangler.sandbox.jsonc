@@ -1,0 +1,41 @@
+{
+	// Portfolio sandbox deployment (Workers + static assets).
+	// Build & deploy:  npm run sandbox:deploy   (see SETUP.md → "Portfolio sandbox")
+	// Each visitor gets a private SQLite DB in the clientell-sandbox-store Durable Object;
+	// there is intentionally no D1 binding here, so the sandbox can never reach real data.
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "clientell-sandbox",
+	"main": ".svelte-kit/cloudflare-sandbox/_worker.js",
+	"compatibility_date": "2026-06-19",
+	"compatibility_flags": ["nodejs_als", "nodejs_compat"],
+	"assets": {
+		"binding": "ASSETS",
+		"directory": ".svelte-kit/cloudflare-sandbox"
+	},
+	"vars": {
+		"SANDBOX_MODE": "1",
+		// Host only — the app appends its base path (/clientell) itself.
+		"PUBLIC_ORIGIN": "https://sandbox.daneoleary.com"
+	},
+	// Lives under a path so future demos can share the host (sandbox.daneoleary.com/<app>).
+	// Needs a proxied DNS record for sandbox.daneoleary.com (see SETUP.md → Portfolio sandbox).
+	"routes": [
+		{ "pattern": "sandbox.daneoleary.com/clientell", "zone_name": "daneoleary.com" },
+		{ "pattern": "sandbox.daneoleary.com/clientell/*", "zone_name": "daneoleary.com" }
+	],
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "SANDBOX_DB",
+				"class_name": "SandboxDatabase",
+				"script_name": "clientell-sandbox-store"
+			}
+		]
+	},
+	"r2_buckets": [
+		{
+			"binding": "UPLOADS",
+			"bucket_name": "clientell-sandbox-uploads"
+		}
+	]
+}

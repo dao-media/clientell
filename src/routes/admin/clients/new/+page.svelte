@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import Btn from '$lib/components/Btn.svelte';
 	import Alert from '$lib/components/ui/Alert.svelte';
 	import Field from '$lib/components/ui/Field.svelte';
@@ -33,15 +34,15 @@
 				/>
 				{#if 'emailTaken' in form && form.emailTaken}
 					<p class="email-taken-actions">
-						<Btn variant="secondary" href="/portal">Sign in to portal</Btn>
-						<Btn variant="ghost" href="/portal/forgot-pin">Forgot PIN</Btn>
+						<Btn variant="secondary" href="{base}/portal">Sign in</Btn>
+						<Btn variant="ghost" href="{base}/portal/forgot-pin">Forgot PIN</Btn>
 					</p>
 				{/if}
 			{/if}
 
 			<div class="form-actions">
 				<Btn type="submit">Save client</Btn>
-				<Btn variant="secondary" href="/admin/clients">Cancel</Btn>
+				<Btn variant="secondary" href="{base}/admin/clients">Cancel</Btn>
 			</div>
 		</form>
 	</div>

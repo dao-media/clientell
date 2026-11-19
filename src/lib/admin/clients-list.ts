@@ -1,3 +1,4 @@
+import { withBase } from '$lib/paths';
 export type ClientListItem = {
 	id: string;
 	company: string;
@@ -6,6 +7,8 @@ export type ClientListItem = {
 	phone: string | null;
 	services: string[];
 	createdAt: Date;
+	isLocked?: boolean;
+	pinLockoutUntil?: Date | string | null;
 };
 
 function parseClientListItem(
@@ -18,7 +21,7 @@ function parseClientListItem(
 }
 
 export async function fetchClientsList(): Promise<ClientListItem[]> {
-	const response = await fetch(`/admin/clients/list?_=${Date.now()}`, {
+	const response = await fetch(withBase(`/admin/clients/list?_=${Date.now()}`), {
 		method: 'GET',
 		credentials: 'same-origin',
 		cache: 'no-store',

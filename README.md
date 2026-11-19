@@ -1,8 +1,10 @@
-# Briefly
+# ClienTell
 
 Two-sided client intake for **Dane O'Leary Media**: you configure question sets and assignments in the admin console; clients answer via a browser portal using their primary contact email and a 6-digit PIN.
 
-**Production URL:** [https://briefly.daneoleary.com](https://briefly.daneoleary.com)
+**Production URL:** [https://clientell.daneoleary.com](https://clientell.daneoleary.com)
+
+> **Self-hosting your own copy?** Follow [SETUP.md](SETUP.md). It covers Cloudflare resources, secrets, email, admin onboarding, security features and the optional portfolio sandbox.
 
 ## Stack
 
@@ -56,14 +58,13 @@ Open [http://localhost:5173](http://localhost:5173).
 | `npm run build` | Production build |
 | `npm run preview` | Preview Cloudflare build locally |
 | `npm run deploy` | Apply pending remote migrations, build, and deploy to Cloudflare Pages |
-| `npm run domain:add` | Attach `briefly.daneoleary.com` to the Pages project |
 | `npm run db:migrate:local` | Apply pending D1 migrations locally (safe; keeps existing rows) |
 | `npm run db:migrate:remote` | Apply pending D1 migrations to Cloudflare (safe; keeps existing rows) |
 | `npm run db:generate` | Generate a new SQL migration after editing `schema.ts` |
 
 `npm run deploy` and `npm run db:migrate:*` only run **new** migration files (typically `ALTER TABLE … ADD COLUMN`). They do not wipe questions, categories, clients, or submissions. **`db:push` is disabled** by default because it can drop data — use `db:generate` + migrations instead.
 
-## Deploy to briefly.daneoleary.com
+## Deploy to clientell.daneoleary.com
 
 ### 1. Create the D1 database
 
@@ -95,29 +96,23 @@ In the [Cloudflare dashboard](https://dash.cloudflare.com/) → **Workers & Page
 |----------|------|---------|
 | `ADMIN_PASSWORD` | Secret | strong password |
 | `SESSION_SECRET` | Secret | long random string |
-| `PUBLIC_ORIGIN` | Plain text | `https://briefly.daneoleary.com` |
+| `PUBLIC_ORIGIN` | Plain text | `https://clientell.daneoleary.com` |
 
 `PUBLIC_ORIGIN` is also set in `wrangler.jsonc` for Wrangler deploys.
 
 ### 5. Attach the custom domain
 
-If **daneoleary.com** is already on Cloudflare:
-
-```sh
-npm run domain:add
-```
-
-Or in the dashboard: **Workers & Pages** → **briefly** → **Custom domains** → **Set up a custom domain** → enter `briefly.daneoleary.com`.
+In the dashboard: **Workers & Pages** → **briefly** → **Custom domains** → **Set up a custom domain** → enter `clientell.daneoleary.com`.
 
 Cloudflare will create the DNS record automatically when the zone is on the same account. SSL is provisioned automatically (usually within a few minutes).
 
 ### 6. Verify
 
-- [https://briefly.daneoleary.com](https://briefly.daneoleary.com) — landing page
-- [https://briefly.daneoleary.com/admin/login](https://briefly.daneoleary.com/admin/login) — admin
-- [https://briefly.daneoleary.com/portal](https://briefly.daneoleary.com/portal) — client portal
+- [https://clientell.daneoleary.com](https://clientell.daneoleary.com) — landing page
+- [https://clientell.daneoleary.com/admin/login](https://clientell.daneoleary.com/admin/login) — admin
+- [https://clientell.daneoleary.com/portal](https://clientell.daneoleary.com/portal) — client portal
 
-Assignment creation in admin will show the full `https://briefly.daneoleary.com/portal` link to share with clients.
+Assignment creation in admin will show the full `https://clientell.daneoleary.com/portal` link to share with clients.
 
 ## Recreate scaffold
 

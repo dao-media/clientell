@@ -1,4 +1,5 @@
 import { error, fail, redirect } from '@sveltejs/kit';
+import { getEmailOwner } from '$lib/server/admin-profile';
 import { eq } from 'drizzle-orm';
 import { resetClientPortalPin } from '$lib/server/auth/reset-client-pin';
 import { getPortalUrl } from '$lib/server/config';
@@ -7,6 +8,7 @@ import { deleteAssignment, getSubmissionDetail, submissionHasClientContent } fro
 import { assignments, questionSets, responses } from '$lib/server/db/schema';
 import { formatCategoryList, mergeCategoryDefinitions, normalizeClientServiceIds } from '$lib/categories';
 import type { Actions, PageServerLoad } from './$types';
+import { withBase } from '$lib/paths';
 
 export const load: PageServerLoad = async ({ locals, params, platform }) => {
 	const detail = await getSubmissionDetail(locals.db, params.id);
@@ -47,6 +49,7 @@ export const actions: Actions = {
 
 		if (detail.assignment.sentAt) {
 			const result = await sendBriefAccessHelpEmail(platform, {
+				owner: await getEmailOwner(locals.db),
 				to: detail.client.email,
 				contactName: detail.client.contactName,
 				loginEmail: detail.client.email,
@@ -69,6 +72,7 @@ export const actions: Actions = {
 
 		const categoriesLabel = formatCategoryList(detail.briefCategories, detail.setCategories);
 		const result = await sendBriefReadyEmail(platform, {
+			owner: await getEmailOwner(locals.db),
 			to: detail.client.email,
 			contactName: detail.client.contactName,
 			loginEmail: detail.client.email,
@@ -92,6 +96,7 @@ export const actions: Actions = {
 		if (!detail) return fail(404, { error: 'Submission not found.' });
 
 		const result = await sendBriefReminder(platform, {
+			owner: await getEmailOwner(locals.db),
 			to: detail.client.email,
 			contactName: detail.client.contactName,
 			briefTitle: detail.questionSet.title,
@@ -106,6 +111,7 @@ export const actions: Actions = {
 		if (!detail) return fail(404, { error: 'Submission not found.' });
 
 		const result = await sendPortalLinkEmail(platform, {
+			owner: await getEmailOwner(locals.db),
 			to: detail.client.email,
 			contactName: detail.client.contactName,
 			briefTitle: detail.questionSet.title
@@ -165,6 +171,6 @@ export const actions: Actions = {
 			return { cancelled: true };
 		}
 
-		redirect(303, safeReturn);
+		redirect(303, withBase(safeReturn));
 	}
 };

@@ -1,4 +1,5 @@
 import type { Database } from '$lib/server/db';
+import { getEmailOwner } from '$lib/server/admin-profile';
 import { findClientByEmail } from '$lib/server/clients-email';
 import { sendForgotPinEmail } from '$lib/server/email/reminder';
 import { resetClientPortalPin } from '$lib/server/auth/reset-client-pin';
@@ -38,6 +39,7 @@ export async function sendForgotPinForEmail(
 	});
 
 	const result = await sendForgotPinEmail(platform, {
+		owner: await getEmailOwner(db),
 		to: client.email,
 		contactName: client.contactName,
 		loginEmail: client.email,

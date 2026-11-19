@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import { page } from '$app/state';
 	import { adminDataKeys, refreshOnVisible } from '$lib/admin/refresh-data';
 	import Btn from '$lib/components/Btn.svelte';
@@ -21,15 +22,15 @@
 	/>
 
 	<div class="bento-grid bento-grid--stats">
-		<a class="card bento-tile-link stat-tile" href="/admin/clients">
+		<a class="card bento-tile-link stat-tile" href="{base}/admin/clients">
 			<p class="stat-label">Clients</p>
 			<p class="stat-value">{stats.clients}</p>
 		</a>
-		<a class="card bento-tile-link stat-tile" href="/admin/question-sets">
+		<a class="card bento-tile-link stat-tile" href="{base}/admin/question-sets">
 			<p class="stat-label">Categories</p>
 			<p class="stat-value">{stats.categories}</p>
 		</a>
-		<a class="card bento-tile-link stat-tile" href="/admin/submissions/unfinished">
+		<a class="card bento-tile-link stat-tile" href="{base}/admin/submissions/unfinished">
 			<p class="stat-label">Pending</p>
 			<p class="stat-value">{stats.pending}</p>
 		</a>
@@ -41,7 +42,7 @@
 				<h2>Recent submissions</h2>
 				<p class="section-lead">Submitted in the last 90 days</p>
 			</div>
-			<Btn href="/admin/briefs/new">New Brief</Btn>
+			<Btn href="{base}/admin/briefs/new">New Brief</Btn>
 		</div>
 
 		{#if recentAssignments.length === 0}
@@ -51,7 +52,7 @@
 				{#each recentAssignments as assignment (assignment.id)}
 					<li class="record-card card">
 						<div class="record-card-head">
-							<a class="row-link" href="/admin/submissions/{assignment.id}">{assignment.clientCompany}</a>
+							<a class="row-link" href="{base}/admin/submissions/{assignment.id}">{assignment.clientCompany}</a>
 							{#if assignment.status}
 								<StatusBadge status={assignment.status} />
 							{:else}
@@ -69,7 +70,7 @@
 							</div>
 						</dl>
 						<div class="record-card-actions">
-							<Btn variant="ghost" href="/admin/submissions/{assignment.id}">Open detail</Btn>
+							<Btn variant="ghost" href="{base}/admin/submissions/{assignment.id}">Open detail</Btn>
 						</div>
 					</li>
 				{/each}
@@ -88,7 +89,7 @@
 						{#each recentAssignments as assignment (assignment.id)}
 							<tr>
 								<td>
-									<a href="/admin/submissions/{assignment.id}">{assignment.clientCompany}</a>
+									<a href="{base}/admin/submissions/{assignment.id}">{assignment.clientCompany}</a>
 								</td>
 								<td class="hide-md">{assignment.categoriesLabel}</td>
 								<td>

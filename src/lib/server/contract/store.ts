@@ -19,6 +19,7 @@ import {
 import type { VariableContext } from '$lib/contract/variables';
 import { createContractId } from '$lib/ids';
 import { ensureClausesSeeded } from '$lib/server/contract/ensure-clauses';
+import { getDesignerIdentity } from '$lib/server/admin-profile';
 import type { Database } from '$lib/server/db';
 import { clauses, clients, contracts } from '$lib/server/db/schema';
 
@@ -240,7 +241,10 @@ export async function assembleFromContract(db: Database, id: string) {
 	if (!detail) return null;
 	await ensureClausesSeeded(db);
 	const clauseRows = await loadActiveClauses(db);
-	const ctx = contractToVariableContext(detail.contract, detail.client);
+	const ctx = {
+		...contractToVariableContext(detail.contract, detail.client),
+		designer: await getDesignerIdentity(db)
+	};
 	return {
 		detail,
 		assembly: assembleContract(clauseRows, ctx, {

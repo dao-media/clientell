@@ -7,15 +7,15 @@
 	import LogIn from '@lucide/svelte/icons/log-in';
 	import PageShell from '$lib/components/layout/PageShell.svelte';
 	import type { ActionData } from './$types';
-	import { bindAuthFormDebug, submitAuthFormElement, submitAuthFormOnEnter } from '$lib/utils/auth-form';
+	import {
+		bindAuthFormDebug,
+		submitAuthFormFromClick,
+		submitAuthFormOnEnter
+	} from '$lib/utils/auth-form';
 
 	let { form }: { form: ActionData } = $props();
 
 	let formEl = $state<HTMLFormElement | null>(null);
-
-	$effect(() => {
-		return bindAuthFormDebug(formEl, 'portal-sign-in');
-	});
 </script>
 
 <PageShell width="auth" center>
@@ -25,8 +25,11 @@
 			Use the primary contact email and the 6-digit PIN you received.
 		</p>
 
+		<!-- Enter-to-submit is delegated from the inputs inside; the inputs themselves are keyboard-accessible. -->
+		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 		<form
 			bind:this={formEl}
+			use:bindAuthFormDebug={'portal-sign-in'}
 			method="POST"
 			class="form-group"
 			novalidate
@@ -34,24 +37,22 @@
 			onkeydown={(event) =>
 				submitAuthFormOnEnter(event, { focusPinOnEmail: true, formId: 'portal-sign-in' })}
 		>
-			<div>
-				<label class="label" for="email">Email</label>
+			<div class="float-field">
 				<input
 					class="field"
+					placeholder=" "
 					id="email"
 					name="email"
 					type="text"
 					autocomplete="off"
 					spellcheck="false"
 				/>
+				<label class="float-field__label" for="email">Email</label>
 			</div>
-			<div>
-				<label class="label" for="pin">6-digit PIN</label>
-				<PinField id="pin" name="pin" />
-			</div>
+			<PinField id="pin" name="pin" label="6-digit PIN" />
 
 			{#if form?.error}
-				<p class="form-error">{form.error}</p>
+				<p class="form-error" role="alert">{form.error}</p>
 			{/if}
 
 			<p class="auth-helper">
@@ -65,7 +66,7 @@
 					class="w-full"
 					type="button"
 					icon={LogIn}
-					onclick={() => formEl && submitAuthFormElement(formEl, 'portal-sign-in')}
+					onclick={(event) => submitAuthFormFromClick(event, 'portal-sign-in', formEl)}
 				>
 					Continue
 				</Btn>

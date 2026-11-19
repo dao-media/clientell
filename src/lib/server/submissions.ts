@@ -41,6 +41,8 @@ export type SubmissionListItem = {
 	updatedAt: Date | null;
 	submittedAt: Date | null;
 	answerPreview: string;
+	briefTitle: string;
+	sentAt: Date | null;
 };
 
 function parseDateStart(value: string): Date | null {
@@ -114,6 +116,7 @@ export async function listSubmissions(db: Database, filters: SubmissionFilters =
 			status: responses.status,
 			answers: responses.answers,
 			isActive: assignments.isActive,
+			sentAt: assignments.sentAt,
 			createdAt: assignments.createdAt,
 			updatedAt: responses.updatedAt,
 			submittedAt: responses.submittedAt
@@ -191,7 +194,9 @@ export async function listSubmissions(db: Database, filters: SubmissionFilters =
 			createdAt: row.createdAt,
 			updatedAt: row.updatedAt,
 			submittedAt: row.submittedAt,
-			answerPreview
+			answerPreview,
+			briefTitle: row.questionSetTitle,
+			sentAt: row.sentAt
 		};
 	});
 }

@@ -21,6 +21,7 @@
 		icon?: IconComponent;
 		class?: string;
 		children?: Snippet;
+		onclick?: (event: MouseEvent & { currentTarget: EventTarget & HTMLElement }) => void;
 		[key: string]: unknown;
 	} = $props();
 

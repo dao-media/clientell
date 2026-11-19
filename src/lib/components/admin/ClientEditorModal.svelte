@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { withBase } from '$lib/paths';
+	import { base } from '$app/paths';
 	import { deserialize } from '$app/forms';
 	import CategoryTagPicker from '$lib/components/admin/CategoryTagPicker.svelte';
 	import InlineEditableField from '$lib/components/admin/InlineEditableField.svelte';
@@ -216,7 +218,7 @@
 			formData.append('services', serviceId);
 		}
 
-		const response = await fetch('/admin/clients?/saveClient', { method: 'POST', body: formData });
+		const response = await fetch(withBase('/admin/clients?/saveClient'), { method: 'POST', body: formData });
 		const result = deserialize(await response.text());
 
 		if (result.type === 'success') {
@@ -436,8 +438,12 @@
 												</Btn>
 											</div>
 										{:else}
-											<!-- svelte-ignore a11y_no_static_element_interactions -->
-											<div class="inline-field-display" ondblclick={startServicesEdit}>
+											<button
+												type="button"
+												class="inline-field-display services-display"
+												aria-label="Edit services"
+												onclick={startServicesEdit}
+											>
 												{#if selectedServices.length > 0}
 													<div class="service-tags">
 														{#each selectedServices as serviceId (serviceId)}
@@ -455,8 +461,8 @@
 												{:else}
 													<span class="inline-field-value">—</span>
 												{/if}
-												<span class="inline-field-hint">Double-click to edit</span>
-											</div>
+												<span class="inline-field-hint" aria-hidden="true">Edit</span>
+											</button>
 										{/if}
 									</div>
 								</section>
@@ -464,7 +470,7 @@
 								<section class="briefs-section" aria-label="Client briefs">
 									<div class="briefs-section-header">
 										<h3>Briefs</h3>
-										<Btn variant="secondary" size="small" href="/admin/briefs/new?client={client?.id}">
+										<Btn variant="secondary" size="small" href="{base}/admin/briefs/new?client={client?.id}">
 											New brief
 										</Btn>
 									</div>
@@ -511,7 +517,7 @@
 										<Btn
 											variant="secondary"
 											size="small"
-											href="/admin/contracts/new{client?.id ? `?client=${client.id}` : ''}"
+											href="{base}/admin/contracts/new{client?.id ? `?client=${client.id}` : ''}"
 										>
 											New contract
 										</Btn>
@@ -527,7 +533,7 @@
 										<ul class="brief-list">
 											{#each contracts as item (item.id)}
 												<li>
-													<a class="brief-row" href="/admin/contracts/{item.id}">
+													<a class="brief-row" href="{base}/admin/contracts/{item.id}">
 														<div class="brief-row-main">
 															<p class="brief-row-title">{item.projectName}</p>
 															<p class="brief-row-meta">
@@ -555,7 +561,7 @@
 								{/if}
 								<form
 									method="POST"
-									action="/admin/clients?/resetClientPin"
+									action="{base}/admin/clients?/resetClientPin"
 									class="reset-pin-form"
 									use:enhance={() => {
 										return async ({ result, update }) => {
@@ -822,8 +828,27 @@
 		flex-wrap: wrap;
 		align-items: baseline;
 		gap: 0.5rem 0.75rem;
-		cursor: text;
+		width: 100%;
 		min-width: 0;
+		min-height: var(--target-min);
+		margin: 0 -0.375rem;
+		padding: 0.25rem 0.375rem;
+		border: 0;
+		border-radius: var(--control-radius);
+		background: transparent;
+		color: inherit;
+		font: inherit;
+		text-align: left;
+		cursor: pointer;
+	}
+
+	.inline-field-display:hover {
+		background: var(--color-surface-hover);
+	}
+
+	.inline-field-display:focus-visible {
+		outline: 2px solid var(--color-focus-ring);
+		outline-offset: 1px;
 	}
 
 	.inline-field-value {
@@ -832,12 +857,15 @@
 	}
 
 	.inline-field-hint {
+		margin-left: auto;
 		font-size: 0.75rem;
-		color: var(--color-muted);
+		font-weight: 600;
+		color: var(--color-accent);
 		opacity: 0;
 		transition: opacity 0.15s ease;
 	}
 
+	.inline-field-display:focus-visible .inline-field-hint,
 	.inline-field-display:hover .inline-field-hint,
 	.services-field.inline-field--editing .inline-field-hint {
 		opacity: 1;

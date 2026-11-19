@@ -1,5 +1,5 @@
 {
-	"name": "briefly",
+	"name": "clientell",
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
@@ -20,7 +20,10 @@
 		"db:migrate:remote": "volta run node ./node_modules/wrangler/bin/wrangler.js d1 migrations apply briefly-db --remote",
 		"db:studio": "drizzle-kit studio",
 		"deploy": "volta run node scripts/deploy.mjs",
-		"domain:add": "volta run node ./node_modules/wrangler/bin/wrangler.js pages domain add briefly.daneoleary.com --project-name=briefly"
+		"sandbox:dev": "volta run node scripts/sandbox.mjs dev",
+		"sandbox:store": "volta run node scripts/sandbox.mjs store",
+		"sandbox:build": "volta run node scripts/sandbox.mjs build",
+		"sandbox:deploy": "volta run node scripts/sandbox.mjs deploy"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-cloudflare": "^7.2.8",

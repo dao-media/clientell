@@ -8,6 +8,7 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 		auth: {
 			admin: Boolean(locals.admin),
 			client: Boolean(locals.client)
-		}
+		},
+		sandbox: Boolean(locals.sandbox)
 	};
 };

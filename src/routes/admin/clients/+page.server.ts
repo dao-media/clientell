@@ -1,6 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import { eq, inArray } from 'drizzle-orm';
 import { resetClientPortalPin } from '$lib/server/auth/reset-client-pin';
+import { setClientLocked } from '$lib/server/auth/pin-lockout';
 import { registerPageDataDepends } from '$lib/admin/refresh-data';
 import { loadClientsPageData } from '$lib/server/clients-page';
 import { clients } from '$lib/server/db/schema';
@@ -45,6 +46,24 @@ export const actions: Actions = {
 		await locals.db.delete(clients).where(inArray(clients.id, clientIds));
 
 		return { ...(await clientsPayloadAfterMutation(locals)), deletedCount: clientIds.length };
+	},
+
+	setClientLock: async ({ request, locals }) => {
+		const data = await request.formData();
+		const clientId = String(data.get('clientId') ?? '').trim();
+		const locked = String(data.get('locked') ?? '') === '1';
+		const forcePinReset = String(data.get('forcePinReset') ?? '') === '1';
+
+		if (!clientId) {
+			return fail(400, { lockError: 'Missing client id.' });
+		}
+
+		await setClientLocked(locals.db, clientId, locked, { forcePinReset });
+
+		return {
+			...(await clientsPayloadAfterMutation(locals)),
+			lockChanged: locked ? 'locked' : forcePinReset ? 'unlocked-reset' : 'unlocked'
+		};
 	},
 
 	resetClientPin: async ({ request, locals }) => {

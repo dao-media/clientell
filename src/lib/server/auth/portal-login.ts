@@ -8,12 +8,20 @@ import {
 	maskEmail
 } from '$lib/debug/auth-debug';
 import { verifyPin } from '$lib/server/auth/pin';
+import {
+	clearPinFailures,
+	findLockoutClientByEmail,
+	lockoutMessage,
+	lockoutState,
+	registerFailedPin
+} from '$lib/server/auth/pin-lockout';
 import { setClientSession } from '$lib/server/auth/session';
 import { loginDurationFromForm, type LoginDuration } from '$lib/server/auth/login-duration';
 import type { Database } from '$lib/server/db';
 import { assignments, clients } from '$lib/server/db/schema';
 import { normalizeEmail } from '$lib/utils';
 import { isValidPin, normalizePinInput } from '$lib/utils/pin';
+import { base } from '$app/paths';
 
 export async function authenticateClientPortalLogin(
 	db: Database,
@@ -66,7 +74,7 @@ export async function completeClientPortalLogin(
 		assignmentId,
 		pinMustChange,
 		duration,
-		redirectTo: pinMustChange ? '/portal/set-pin' : '/portal/brief'
+		redirectTo: pinMustChange ? '/portal/set-pin' : '/portal/docs'
 	});
 
 	await setClientSession(
@@ -78,10 +86,10 @@ export async function completeClientPortalLogin(
 	);
 
 	if (pinMustChange) {
-		redirect(303, '/portal/set-pin');
+		redirect(303, `${base}/portal/set-pin`);
 	}
 
-	redirect(303, '/portal/brief');
+	redirect(303, `${base}/portal/docs`);
 }
 
 export async function clientPortalLoginFromForm(
@@ -126,11 +134,34 @@ export async function clientPortalLoginFromForm(
 		});
 	}
 
+	const lockoutClient = await findLockoutClientByEmail(db, email);
+	if (lockoutClient) {
+		const blocked = lockoutMessage(lockoutState(lockoutClient));
+		if (blocked) {
+			authDebug('portal-login-blocked', { email: maskEmail(email) });
+			return fail(423, {
+				error: blocked,
+				...(debugEnabledFromUrl(url)
+					? { authDebug: { email: maskEmail(email), pin: analyzePinValue(rawPin) } }
+					: {})
+			});
+		}
+	}
+
 	const auth = await authenticateClientPortalLogin(db, email, pin);
 	if (!auth) {
 		authDebug('portal-login-invalid-credentials', { email: maskEmail(email) });
+		let error = 'Invalid email or PIN.';
+		if (lockoutClient) {
+			const next = await registerFailedPin(db, lockoutClient);
+			error =
+				lockoutMessage(next) ??
+				(next.kind === 'open'
+					? `Invalid email or PIN. ${next.attemptsLeft} attempt${next.attemptsLeft === 1 ? '' : 's'} left before ${next.onFinalStrike ? 'this account is locked' : 'a 30-minute lockout'}.`
+					: error);
+		}
 		return fail(400, {
-			error: 'Invalid email or PIN.',
+			error,
 			...(debugEnabledFromUrl(url)
 				? {
 						authDebug: {
@@ -141,6 +172,8 @@ export async function clientPortalLoginFromForm(
 				: {})
 		});
 	}
+
+	if (lockoutClient) await clearPinFailures(db, lockoutClient.id);
 
 	await completeClientPortalLogin(
 		cookies,
@@ -164,6 +197,6 @@ export async function redirectClientIfPinChangeRequired(
 
 	if (assignment?.pinMustChange) {
 		authDebug('redirect-set-pin-required', { assignmentId });
-		redirect(303, '/portal/set-pin');
+		redirect(303, `${base}/portal/set-pin`);
 	}
 }

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import { enhance } from '$app/forms';
 	import ContractForm from '$lib/components/admin/ContractForm.svelte';
 	import ContractPreview from '$lib/components/admin/ContractPreview.svelte';
@@ -50,9 +51,9 @@
 	}
 
 	// svelte-ignore state_referenced_locally
-	let state = $state(stateFromData(data));
+	let editorState = $state(stateFromData(data));
 
-	const ctx = $derived(editorStateToContext(state, data.client));
+	const ctx = $derived({ ...editorStateToContext(editorState, data.client), designer: data.designer });
 	const pricing = $derived(
 		computePricing({
 			baseFee: ctx.baseFee,
@@ -64,9 +65,9 @@
 	);
 	const assembly = $derived(
 		assembleContract(data.clauses, ctx, {
-			personalGuarantee: state.personalGuarantee,
-			confidentiality: state.confidentiality,
-			thirdPartyOption: state.thirdPartyOption || null
+			personalGuarantee: editorState.personalGuarantee,
+			confidentiality: editorState.confidentiality,
+			thirdPartyOption: editorState.thirdPartyOption || null
 		})
 	);
 
@@ -84,7 +85,7 @@
 <PageShell width="wide">
 	<PageHeader title={data.contract.projectName} lead={`${data.client.company} · ${data.contract.status}`}>
 		{#snippet actions()}
-			<Btn variant="ghost" href="/admin/contracts">All contracts</Btn>
+			<Btn variant="ghost" href="{base}/admin/contracts">All contracts</Btn>
 		{/snippet}
 	</PageHeader>
 
@@ -122,12 +123,12 @@
 				<Btn type="submit" variant="ghost">Mark signed</Btn>
 			</form>
 		{/if}
-		<Btn variant="ghost" href="/admin/contracts/{data.contract.id}/pdf">Download last PDF</Btn>
+		<Btn variant="ghost" href="{base}/admin/contracts/{data.contract.id}/pdf">Download PDF</Btn>
 	</div>
 
 	<div class="split">
 		<form method="POST" action="?/save" use:enhance>
-			<ContractForm clients={[data.client]} bind:state lockClient />
+			<ContractForm clients={[data.client]} bind:state={editorState} lockClient />
 			<div class="actions">
 				<Btn type="submit">Save changes</Btn>
 			</div>
@@ -138,7 +139,7 @@
 			<form method="POST" action="?/signDesigner" use:enhance class="sign-form">
 				<input type="hidden" name="signature" value={designerPng ?? ''} />
 				<Btn type="submit" disabled={!designerPng || Boolean(data.contract.designerSignature)}>
-					Save designer signature
+					Save signature
 				</Btn>
 			</form>
 		</div>

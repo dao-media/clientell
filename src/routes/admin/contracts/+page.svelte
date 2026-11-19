@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { withBase } from '$lib/paths';
+	import { base } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import {
 		CONTRACT_STATUS_FILTERS,
@@ -27,12 +29,14 @@
 
 	function apply() {
 		goto(
-			contractsHref(parseContractListView(data.filters.status), {
-				search,
-				clientId,
-				dateFrom,
-				dateTo
-			})
+			withBase(
+				contractsHref(parseContractListView(data.filters.status), {
+					search,
+					clientId,
+					dateFrom,
+					dateTo
+				})
+			)
 		);
 	}
 </script>
@@ -40,14 +44,14 @@
 <PageShell>
 	<PageHeader title="Contracts" lead="Generate agreement + SOW packets from a shared client record.">
 		{#snippet actions()}
-			<Btn href="/admin/contracts/new">New contract</Btn>
+			<Btn href="{base}/admin/contracts/new">New contract</Btn>
 		{/snippet}
 	</PageHeader>
 
 	<nav class="filter-tabs" aria-label="Contract status">
 		{#each CONTRACT_STATUS_FILTERS as item (item.view)}
 			<a
-				href={contractsHref(item.view, { search, clientId, dateFrom, dateTo })}
+				href={withBase(contractsHref(item.view, { search, clientId, dateFrom, dateTo }))}
 				class:active={data.filters.status === item.view || (item.view === 'all' && data.filters.status === 'all')}
 			>
 				{item.label}
@@ -83,7 +87,7 @@
 			{#each data.contracts as row (row.id)}
 				<li class="record-card card">
 					<div class="record-card-head">
-						<a class="row-link" href="/admin/contracts/{row.id}">{row.projectName}</a>
+						<a class="row-link" href="{base}/admin/contracts/{row.id}">{row.projectName}</a>
 						<span class="status-pill">{row.status}</span>
 					</div>
 					<dl class="record-card-meta">
@@ -101,7 +105,7 @@
 						</div>
 					</dl>
 					<div class="record-card-actions">
-						<Btn variant="ghost" href="/admin/contracts/{row.id}">Open</Btn>
+						<Btn variant="ghost" href="{base}/admin/contracts/{row.id}">Open</Btn>
 					</div>
 				</li>
 			{/each}
@@ -116,14 +120,22 @@
 		margin-bottom: 1rem;
 	}
 
+	/* Inactive tabs use the muted text color (≥4.5:1) instead of fading the accent with opacity. */
 	.filter-tabs a {
+		color: var(--color-muted);
 		text-decoration: none;
-		opacity: 0.7;
+	}
+
+	.filter-tabs a:hover {
+		color: var(--color-ink);
 	}
 
 	.filter-tabs a.active {
-		opacity: 1;
+		color: var(--color-accent);
 		font-weight: 600;
+		text-decoration: underline;
+		text-underline-offset: 0.35em;
+		text-decoration-thickness: 2px;
 	}
 
 	.filters {

@@ -27,7 +27,9 @@
 </script>
 
 {#if visible}
-	<aside class="auth-debug-panel" aria-label="Auth debug log">
+	<!-- Focusable so keyboard users can scroll the log (WCAG 2.1.1). -->
+	<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+	<aside class="auth-debug-panel" aria-label="Auth debug log" tabindex="0">
 		<p class="auth-debug-title">{AUTH_DEBUG_PREFIX} client log ({entries.length})</p>
 		<p class="auth-debug-hint">
 			Share this panel if sign-in fails. PINs are masked; char codes help spot hidden characters.
@@ -39,7 +41,10 @@
 			</div>
 		{/if}
 		{#if entries.length === 0}
-			<p class="auth-debug-empty">No events yet. Try signing in to populate the log.</p>
+			<p class="auth-debug-empty">
+				No events yet. Open Admin or Client portal — attaching the form should log
+				<code>form-attached</code>. Then sign in.
+			</p>
 		{:else}
 			<ol class="auth-debug-list">
 				{#each entries as entry, index (entry.ts + entry.scope + index)}

@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { createBriefAssignment } from '$lib/server/brief-create';
 import type { Actions } from '@sveltejs/kit';
+import { base } from '$app/paths';
 
 export const submissionBriefActions = {
 	createBrief: async ({ request, locals, platform }) => {
@@ -10,6 +11,6 @@ export const submissionBriefActions = {
 			return fail(result.status, { briefError: result.error });
 		}
 
-		throw redirect(303, `/admin/submissions/${result.assignmentId}`);
+		throw redirect(303, `${base}/admin/submissions/${result.assignmentId}`);
 	}
 } satisfies Actions;

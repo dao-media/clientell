@@ -24,7 +24,7 @@
 <PageShell width="content">
 	<PageHeader title="Brief preview" lead={briefLead}>
 		{#snippet actions()}
-			<Btn variant="secondary" href={data.backHref} icon={ArrowLeft}>Back to submission</Btn>
+			<Btn variant="secondary" href={data.backHref} icon={ArrowLeft}>Back</Btn>
 		{/snippet}
 	</PageHeader>
 
