@@ -33,6 +33,22 @@
 				);
 			}
 		</script>
+		<script>
+			// Arriving from the portfolio through its wave transition (?wave=1): start solid ink, so the
+			// page never shows before the lines sweep it in ($lib/wave-transition.ts).
+			if (/[?&]wave=1/.test(location.search) && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+				document.documentElement.classList.add('wave-arrive');
+			}
+		</script>
+		<style>
+			html.wave-arrive::after {
+				content: '';
+				position: fixed;
+				inset: 0;
+				z-index: 2147483646;
+				background: #241e1c;
+			}
+		</style>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="tap" data-sveltekit-preload-code="tap">
