@@ -11,11 +11,16 @@
 
 	let { data, children } = $props();
 
-	// Ink takeover back to the portfolio case study (sandbox only): the case study bleeds in through
-	// the portfolio's ink matte turned 180°, then the browser navigates to it.
+	// Fluid wipe takeover back to the portfolio case study (sandbox only): a splash in the other
+	// theme's canvas opens across the window, the case study opens inside it (the portfolio's wipe
+	// turned 180°), then the browser navigates to it. (Canvas colors: layout.css --color-canvas.)
 	onMount(() => {
 		if (!data.sandbox) return;
-		initWaveTransition({ sprite: `${base}/ink-180.webp`, cols: 8, rows: 5, frames: 38, fps: 25 });
+		initWaveTransition({
+			frames: `${base}/fluid.json`,
+			background: { light: '#f8f7ff', dark: '#0e0c18' },
+			rotate: true
+		});
 	});
 
 	const canonicalUrl = $derived(
