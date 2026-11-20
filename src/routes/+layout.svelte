@@ -5,16 +5,17 @@
 	import SiteHeader from '$lib/components/SiteHeader.svelte';
 	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
 	import { onMount } from 'svelte';
-	import { initWaveTransition, withWave } from '$lib/wave-transition';
+	import { initWaveTransition } from '$lib/wave-transition';
 	import './layout.css';
 	import '$lib/styles/client-brief.css';
 
 	let { data, children } = $props();
 
-	// Wave line transition to and from the portfolio case study (sandbox only).
+	// Wave line takeover back to the portfolio case study (sandbox only): the case study sweeps in
+	// through the lines, then the browser navigates to it.
 	onMount(() => {
 		if (!data.sandbox) return;
-		initWaveTransition({ cover: `${base}/wave-cover.mp4`, reveal: `${base}/wave-reveal.mp4` });
+		initWaveTransition({ frames: `${base}/wave-09.json` });
 	});
 
 	const canonicalUrl = $derived(
@@ -85,7 +86,7 @@
 	</main>
 
 	{#if data.caseStudyUrl}
-		<a class="case-study-fab" href={withWave(data.caseStudyUrl)} data-wave>
+		<a class="case-study-fab" href={data.caseStudyUrl} data-wave>
 			<ArrowLeft size={18} strokeWidth={2.25} aria-hidden="true" />
 			<span>Case study</span>
 		</a>
