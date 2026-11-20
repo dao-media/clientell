@@ -11,11 +11,11 @@
 
 	let { data, children } = $props();
 
-	// Wave line takeover back to the portfolio case study (sandbox only): the case study sweeps in
-	// through the lines, then the browser navigates to it.
+	// Ink takeover back to the portfolio case study (sandbox only): the case study bleeds in through
+	// the portfolio's ink matte turned 180°, then the browser navigates to it.
 	onMount(() => {
 		if (!data.sandbox) return;
-		initWaveTransition({ frames: `${base}/wave-09.json` });
+		initWaveTransition({ sprite: `${base}/ink-180.webp`, cols: 8, rows: 5, frames: 38, fps: 25 });
 	});
 
 	const canonicalUrl = $derived(
